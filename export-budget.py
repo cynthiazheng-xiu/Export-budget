@@ -204,6 +204,13 @@ st.markdown("""
     .calc-button {
         flex: 1;
     }
+    .metric-container {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-align: center;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -598,7 +605,7 @@ def extract_number(text):
     except:
         return 0.0
 
-# 获取运费单价的值（从侧边栏的表格中读取）
+# 获取运费单价的值
 if st.session_state.freight_data:
     container_20_normal = st.session_state.freight_data.get('c20_normal', 1452)
     container_20_frozen = st.session_state.freight_data.get('c20_frozen', 2903)
@@ -622,24 +629,28 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
     total_net = total_packages * single_net
     total_volume = total_packages * single_volume
 
-    # 显示计算结果
-    st.markdown("### 📦 货物总量")
+    # ==================== 货物总量计算 ====================
+    st.markdown("### 📦 货物总量计算")
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     with col_m1:
         st.metric("总包装数", f"{int(total_packages)}个")
+        st.caption(f"公式: ⌈{quantity} ÷ {units_per_package:.0f}⌉")
     with col_m2:
-        st.metric("总毛重", f"{total_gross:,.0f}KGS")
+        st.metric("总毛重", f"{total_gross:,.0f} KGS")
+        st.caption(f"公式: {int(total_packages)} × {single_gross:.0f}")
     with col_m3:
-        st.metric("总净重", f"{total_net:,.0f}KGS")
+        st.metric("总净重", f"{total_net:,.0f} KGS")
+        st.caption(f"公式: {int(total_packages)} × {single_net:.0f}")
     with col_m4:
-        st.metric("总体积", f"{total_volume:.2f}CBM")
+        st.metric("总体积", f"{total_volume:.2f} CBM")
+        st.caption(f"公式: {int(total_packages)} × {single_volume:.2f}")
 
-    # ==================== 计算报价 ====================
+    # ==================== 计算运费和报价 ====================
     st.markdown("""
     <div class="step-container">
         <div class="step-header">
             <span class="step-badge">第三步</span>
-            <span class="step-title">计算报价</span>
+            <span class="step-title">计算运费和报价</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -662,210 +673,217 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
 
     with col_calc2:
         if st.button("💰 计算报价", use_container_width=True):
-            purchase_total = purchase_price * quantity
-            rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
-            total_cost = purchase_total - rebate + (st.session_state.best_freight * st.session_state.exchange_rate)
-            st.session_state.suggested_price = (total_cost * (1.0 + expected_profit_rate/100.0)) / quantity / st.session_state.exchange_rate
-            st.session_state.total_cost = total_cost
-            st.success(f"建议报价: ${st.session_state.suggested_price:.2f}/台")
+            if st.session_state.best_freight > 0:
+                purchase_total = purchase_price * quantity
+                rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
+                total_cost = purchase_total - rebate + (st.session_state.best_freight * st.session_state.exchange_rate)
+                st.session_state.suggested_price = (total_cost * (1.0 + expected_profit_rate/100.0)) / quantity / st.session_state.exchange_rate
+                st.session_state.total_cost = total_cost
+                st.success(f"建议报价: ${st.session_state.suggested_price:.2f}/台")
+            else:
+                st.warning("请先计算运费")
 
     # ==================== 出口预算表 ====================
-    st.markdown("""
-    <div class="step-container">
-        <div class="step-header">
-            <span class="step-badge">第四步</span>
-            <span class="step-title">出口预算表</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 计算费用
-    purchase_total = purchase_price * quantity
-    rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
-    inland_fee = max(50.0, total_volume * 10.0) * st.session_state.exchange_rate
-    forwarder_fee = max(70.0, total_volume * 2.5) * st.session_state.exchange_rate
-    inspection_fee = 30.0 * st.session_state.exchange_rate if "B" in str(inspection_type) else 0.0
-    certificate_fee = 100.0 * st.session_state.exchange_rate if "B" in str(inspection_type) else 0.0
-    customs_fee = 30.0 * st.session_state.exchange_rate if trade_term != "EXW" else 0.0
-    insurance = purchase_total * 1.1 * 0.005 if trade_term in ["CIF", "CIP", "DAP", "DPU", "DDP"] else 0.0
-
-    if payment in ["D/P", "D/A"]:
-        bank_fee = max(15.0, min(285.0, purchase_total * 0.001)) + 45.0
-    elif "L/C" in payment:
-        bank_fee = max(15.0, purchase_total * 0.00125) + 75.0
-    else:
-        bank_fee = 0.0
-
-    domestic_total = inland_fee + forwarder_fee + inspection_fee + certificate_fee + customs_fee + insurance
-
-    # 创建预算表
-    st.markdown("""
-    <div class="excel-table">
-        <div class="excel-header">
-            <div>项目</div>
-            <div>费用项目</div>
-            <div>金额</div>
-            <div>计算原理</div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # 1. 采购成本
-    st.markdown(f"""
-    <div class="excel-row">
-        <div class="excel-label">1.采购成本</div>
-        <div class="excel-sub">含税购入价</div>
-        <div class="excel-amount">¥{purchase_total:,.2f}</div>
-        <div class="excel-principle">{purchase_price:.0f} × {int(quantity)}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 2. 退税收入
-    st.markdown(f"""
-    <div class="excel-row">
-        <div class="excel-label">2.退税收入</div>
-        <div class="excel-sub">退税额</div>
-        <div class="excel-amount">¥{rebate:,.2f}</div>
-        <div class="excel-principle">含税价÷(1+{vat_rate:.0f}%)×{export_rebate_rate:.0f}%</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 3. 国内费用
-    st.markdown(f"""
-    <div class="excel-row">
-        <div class="excel-label">3.国内费用</div>
-        <div class="excel-sub">出口内陆运费</div>
-        <div class="excel-amount">¥{inland_fee:,.2f}</div>
-        <div class="excel-principle">MAX(50, {total_volume:.1f}×10)×{st.session_state.exchange_rate:.3f}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div class="excel-row">
-        <div class="excel-label"></div>
-        <div class="excel-sub">国际运费</div>
-        <div class="excel-amount">¥{st.session_state.best_freight_cny:,.2f}</div>
-        <div class="excel-principle">{st.session_state.containers_needed}个{st.session_state.container_type} (${st.session_state.best_freight:,.2f} × {st.session_state.exchange_rate:.3f})</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div class="excel-row">
-        <div class="excel-label"></div>
-        <div class="excel-sub">出口货代杂费</div>
-        <div class="excel-amount">¥{forwarder_fee:,.2f}</div>
-        <div class="excel-principle">MAX(70, {total_volume:.1f}×2.5)×{st.session_state.exchange_rate:.3f}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if inspection_fee > 0:
-        st.markdown(f"""
-        <div class="excel-row">
-            <div class="excel-label"></div>
-            <div class="excel-sub">出口商检费</div>
-            <div class="excel-amount">¥{inspection_fee:,.2f}</div>
-            <div class="excel-principle">检验检疫类别含B时收取</div>
+    if st.session_state.calculated and st.session_state.suggested_price > 0:
+        st.markdown("""
+        <div class="step-container">
+            <div class="step-header">
+                <span class="step-badge">第四步</span>
+                <span class="step-title">出口预算表</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-    if certificate_fee > 0:
-        st.markdown(f"""
-        <div class="excel-row">
-            <div class="excel-label"></div>
-            <div class="excel-sub">检验检疫证书费</div>
-            <div class="excel-amount">¥{certificate_fee:,.2f}</div>
-            <div class="excel-principle">检验检疫类别含B时收取</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    if customs_fee > 0:
-        st.markdown(f"""
-        <div class="excel-row">
-            <div class="excel-label"></div>
-            <div class="excel-sub">出口报关费</div>
-            <div class="excel-amount">¥{customs_fee:,.2f}</div>
-            <div class="excel-principle">30×{st.session_state.exchange_rate:.3f}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    if insurance > 0:
-        st.markdown(f"""
-        <div class="excel-row">
-            <div class="excel-label"></div>
-            <div class="excel-sub">保险费</div>
-            <div class="excel-amount">¥{insurance:,.2f}</div>
-            <div class="excel-principle">采购成本×110%×0.5%</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # 国内费用合计
-    st.markdown(f"""
-    <div class="excel-row" style="background-color: #e9ecef;">
-        <div class="excel-label"></div>
-        <div class="excel-sub"><strong>国内费用合计</strong></div>
-        <div class="excel-amount"><strong>¥{domestic_total:,.2f}</strong></div>
-        <div class="excel-principle">各项相加</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 4. 银行费用
-    if payment in ["D/P", "D/A"] or "L/C" in payment:
-        fee_type = '托收费用' if payment in ['D/P','D/A'] else '信用证费用'
-        st.markdown(f"""
-        <div class="excel-row">
-            <div class="excel-label">4.银行费用</div>
-            <div class="excel-sub">{fee_type}</div>
-            <div class="excel-amount">${bank_fee:,.2f}</div>
-            <div class="excel-principle">根据支付方式</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # 总成本
-    total_cost_final = purchase_total - rebate + domestic_total + (bank_fee * st.session_state.exchange_rate) + (st.session_state.best_freight * st.session_state.exchange_rate)
-
-    st.markdown(f"""
-    <div class="excel-row" style="background-color: #2a5298; color: white; font-weight: bold;">
-        <div class="excel-label">总成本</div>
-        <div class="excel-sub">=1-2+3+4</div>
-        <div class="excel-amount">¥{total_cost_final:,.2f}</div>
-        <div class="excel-principle" style="color: white;">采购-退税+国内+银行+运费</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # ==================== 反算利润率 ====================
-    st.markdown("### 📈 反算利润率")
-
-    test_price = st.number_input("输入测试报价 (USD/台)", 
-                                value=float(st.session_state.suggested_price) if st.session_state.suggested_price > 0 else 100.0, 
-                                step=5.0, format="%.2f", key="test_price_input")
-
-    if test_price > 0 and st.session_state.best_freight > 0:
+        # 计算各项费用
         purchase_total = purchase_price * quantity
         rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
         inland_fee = max(50.0, total_volume * 10.0) * st.session_state.exchange_rate
         forwarder_fee = max(70.0, total_volume * 2.5) * st.session_state.exchange_rate
+        inspection_fee = 30.0 * st.session_state.exchange_rate if "B" in str(inspection_type) else 0.0
+        certificate_fee = 100.0 * st.session_state.exchange_rate if "B" in str(inspection_type) else 0.0
         customs_fee = 30.0 * st.session_state.exchange_rate if trade_term != "EXW" else 0.0
-        total_cost = purchase_total - rebate + inland_fee + forwarder_fee + customs_fee + (st.session_state.best_freight * st.session_state.exchange_rate)
-        
-        revenue = test_price * quantity * st.session_state.exchange_rate
-        profit = revenue - total_cost
-        profit_margin = profit / purchase_total if purchase_total > 0 else 0.0
-        
-        col_r1, col_r2, col_r3 = st.columns(3)
-        with col_r1:
-            st.metric("总收入", f"¥{revenue:,.2f}")
-        with col_r2:
-            st.metric("预期利润", f"¥{profit:,.2f}")
-        with col_r3:
-            target = expected_profit_rate / 100.0
-            delta = "✅ 达到目标" if profit_margin >= target else "❌ 低于目标"
-            st.metric("实际利润率", f"{profit_margin:.1%}", delta=delta)
+        insurance = purchase_total * 1.1 * 0.005 if trade_term in ["CIF", "CIP", "DAP", "DPU", "DDP"] else 0.0
+
+        if payment in ["D/P", "D/A"]:
+            bank_fee = max(15.0, min(285.0, purchase_total * 0.001)) + 45.0
+        elif "L/C" in payment:
+            bank_fee = max(15.0, purchase_total * 0.00125) + 75.0
+        else:
+            bank_fee = 0.0
+
+        domestic_total = inland_fee + forwarder_fee + inspection_fee + certificate_fee + customs_fee + insurance
+
+        # 创建预算表
+        st.markdown("""
+        <div class="excel-table">
+            <div class="excel-header">
+                <div>项目</div>
+                <div>费用项目</div>
+                <div>金额</div>
+                <div>计算原理</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        # 1. 采购成本
+        st.markdown(f"""
+        <div class="excel-row">
+            <div class="excel-label">1.采购成本</div>
+            <div class="excel-sub">含税购入价</div>
+            <div class="excel-amount">¥{purchase_total:,.2f}</div>
+            <div class="excel-principle">{purchase_price:.0f} × {int(quantity)}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # 2. 退税收入
+        st.markdown(f"""
+        <div class="excel-row">
+            <div class="excel-label">2.退税收入</div>
+            <div class="excel-sub">退税额</div>
+            <div class="excel-amount">¥{rebate:,.2f}</div>
+            <div class="excel-principle">含税价÷(1+{vat_rate:.0f}%)×{export_rebate_rate:.0f}%</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # 3. 国内费用
+        st.markdown(f"""
+        <div class="excel-row">
+            <div class="excel-label">3.国内费用</div>
+            <div class="excel-sub">出口内陆运费</div>
+            <div class="excel-amount">¥{inland_fee:,.2f}</div>
+            <div class="excel-principle">MAX(50, {total_volume:.1f}×10)×{st.session_state.exchange_rate:.3f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div class="excel-row">
+            <div class="excel-label"></div>
+            <div class="excel-sub">国际运费</div>
+            <div class="excel-amount">¥{st.session_state.best_freight_cny:,.2f}</div>
+            <div class="excel-principle">{st.session_state.containers_needed}个{st.session_state.container_type} (${st.session_state.best_freight:,.2f} × {st.session_state.exchange_rate:.3f})</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div class="excel-row">
+            <div class="excel-label"></div>
+            <div class="excel-sub">出口货代杂费</div>
+            <div class="excel-amount">¥{forwarder_fee:,.2f}</div>
+            <div class="excel-principle">MAX(70, {total_volume:.1f}×2.5)×{st.session_state.exchange_rate:.3f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if inspection_fee > 0:
+            st.markdown(f"""
+            <div class="excel-row">
+                <div class="excel-label"></div>
+                <div class="excel-sub">出口商检费</div>
+                <div class="excel-amount">¥{inspection_fee:,.2f}</div>
+                <div class="excel-principle">检验检疫类别含B时收取</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        if certificate_fee > 0:
+            st.markdown(f"""
+            <div class="excel-row">
+                <div class="excel-label"></div>
+                <div class="excel-sub">检验检疫证书费</div>
+                <div class="excel-amount">¥{certificate_fee:,.2f}</div>
+                <div class="excel-principle">检验检疫类别含B时收取</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        if customs_fee > 0:
+            st.markdown(f"""
+            <div class="excel-row">
+                <div class="excel-label"></div>
+                <div class="excel-sub">出口报关费</div>
+                <div class="excel-amount">¥{customs_fee:,.2f}</div>
+                <div class="excel-principle">30×{st.session_state.exchange_rate:.3f}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        if insurance > 0:
+            st.markdown(f"""
+            <div class="excel-row">
+                <div class="excel-label"></div>
+                <div class="excel-sub">保险费</div>
+                <div class="excel-amount">¥{insurance:,.2f}</div>
+                <div class="excel-principle">采购成本×110%×0.5%</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # 国内费用合计
+        st.markdown(f"""
+        <div class="excel-row" style="background-color: #e9ecef;">
+            <div class="excel-label"></div>
+            <div class="excel-sub"><strong>国内费用合计</strong></div>
+            <div class="excel-amount"><strong>¥{domestic_total:,.2f}</strong></div>
+            <div class="excel-principle">各项相加</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # 4. 银行费用
+        if payment in ["D/P", "D/A"] or "L/C" in payment:
+            fee_type = '托收费用' if payment in ['D/P','D/A'] else '信用证费用'
+            st.markdown(f"""
+            <div class="excel-row">
+                <div class="excel-label">4.银行费用</div>
+                <div class="excel-sub">{fee_type}</div>
+                <div class="excel-amount">${bank_fee:,.2f}</div>
+                <div class="excel-principle">根据支付方式</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # 总成本
+        total_cost_final = purchase_total - rebate + domestic_total + (bank_fee * st.session_state.exchange_rate) + (st.session_state.best_freight * st.session_state.exchange_rate)
+
+        st.markdown(f"""
+        <div class="excel-row" style="background-color: #2a5298; color: white; font-weight: bold;">
+            <div class="excel-label">总成本</div>
+            <div class="excel-sub">=1-2+3+4</div>
+            <div class="excel-amount">¥{total_cost_final:,.2f}</div>
+            <div class="excel-principle" style="color: white;">采购-退税+国内+银行+运费</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # ==================== 反算利润率 ====================
+        st.markdown("### 📈 反算利润率")
+
+        test_price = st.number_input("输入测试报价 (USD/台)", 
+                                    value=float(st.session_state.suggested_price) if st.session_state.suggested_price > 0 else 100.0, 
+                                    step=5.0, format="%.2f", key="test_price_input")
+
+        if test_price > 0:
+            purchase_total = purchase_price * quantity
+            rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
+            inland_fee = max(50.0, total_volume * 10.0) * st.session_state.exchange_rate
+            forwarder_fee = max(70.0, total_volume * 2.5) * st.session_state.exchange_rate
+            customs_fee = 30.0 * st.session_state.exchange_rate if trade_term != "EXW" else 0.0
+            total_cost = purchase_total - rebate + inland_fee + forwarder_fee + customs_fee + (st.session_state.best_freight * st.session_state.exchange_rate)
+            
+            revenue = test_price * quantity * st.session_state.exchange_rate
+            profit = revenue - total_cost
+            profit_margin = profit / purchase_total if purchase_total > 0 else 0.0
+            
+            col_r1, col_r2, col_r3 = st.columns(3)
+            with col_r1:
+                st.metric("总收入", f"¥{revenue:,.2f}")
+                st.caption(f"{test_price:.2f} × {int(quantity)} × {st.session_state.exchange_rate:.3f}")
+            with col_r2:
+                st.metric("预期利润", f"¥{profit:,.2f}")
+                st.caption(f"{revenue:,.2f} - {total_cost:,.2f}")
+            with col_r3:
+                target = expected_profit_rate / 100.0
+                delta = "✅ 达到目标" if profit_margin >= target else "❌ 低于目标"
+                st.metric("实际利润率", f"{profit_margin:.1%}", delta=delta)
+                st.caption(f"目标: {target:.1%}")
 
 else:
     st.markdown("""
     <div class="empty-state">
-        ⏳ 请先抓取数据，然后填写交易数量及采购单价进行计算
+        ⏳ 请先点击侧边栏的"抓取数据"按钮获取产品信息，然后填写交易数量及采购单价进行计算
     </div>
     """, unsafe_allow_html=True)
 
