@@ -254,7 +254,7 @@ if 'exchange_rate' not in st.session_state:
 if 'quantity' not in st.session_state:
     st.session_state.quantity = 0
 if 'purchase_price' not in st.session_state:
-    st.session_state.purchase_price = 0
+    st.session_state.purchase_price = 0.0
 if 'trade_term' not in st.session_state:
     st.session_state.trade_term = "FOB"
 if 'payment' not in st.session_state:
@@ -271,7 +271,7 @@ def clear_all_data():
     st.session_state.freight_data = None
     st.session_state.exchange_rate = 1.368
     st.session_state.quantity = 0
-    st.session_state.purchase_price = 0
+    st.session_state.purchase_price = 0.0
     st.session_state.trade_term = "FOB"
     st.session_state.payment = "T/T"
 
@@ -477,13 +477,13 @@ with col_hs3:
 with col_hs4:
     legal_unit = st.text_input("法定单位", "台(SET)", key="legal_unit", label_visibility="collapsed", placeholder="法定单位")
 with col_hs5:
-    pref_tax_rate = st.number_input("优惠税率%", value=50, key="pref_tax_rate", label_visibility="collapsed", placeholder="优惠税率%", step=1)
+    pref_tax_rate = st.number_input("优惠税率%", value=50.0, key="pref_tax_rate", label_visibility="collapsed", placeholder="优惠税率%", step=1.0)
 with col_hs6:
-    vat_rate = st.number_input("增值税%", value=13, key="vat_rate", label_visibility="collapsed", placeholder="增值税%", step=1)
+    vat_rate = st.number_input("增值税%", value=13.0, key="vat_rate", label_visibility="collapsed", placeholder="增值税%", step=1.0)
 with col_hs7:
-    export_tax_rate = st.number_input("出口税率%", value=0, key="export_tax_rate", label_visibility="collapsed", placeholder="出口税率%", step=1)
+    export_tax_rate = st.number_input("出口税率%", value=0.0, key="export_tax_rate", label_visibility="collapsed", placeholder="出口税率%", step=1.0)
 with col_hs8:
-    export_rebate_rate = st.number_input("退税率%", value=13, key="export_rebate_rate", label_visibility="collapsed", placeholder="退税率%", step=1)
+    export_rebate_rate = st.number_input("退税率%", value=13.0, key="export_rebate_rate", label_visibility="collapsed", placeholder="退税率%", step=1.0)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -516,26 +516,26 @@ with col_freight1:
     
     col_p1, col_p2, col_p3 = st.columns(3)
     with col_p1:
-        lcl_w_normal = st.number_input("LCL(W)", value=freight_data.get('lcl_w_normal', 73), key="lcl_w_normal", step=1)
-        container_20_normal = st.number_input("20'GP", value=freight_data.get('c20_normal', 1452), key="c20_normal", step=1)
+        lcl_w_normal = st.number_input("LCL(W)", value=float(freight_data.get('lcl_w_normal', 73)), key="lcl_w_normal", step=1.0)
+        container_20_normal = st.number_input("20'GP", value=float(freight_data.get('c20_normal', 1452)), key="c20_normal", step=1.0)
     with col_p2:
-        lcl_m_normal = st.number_input("LCL(M)", value=freight_data.get('lcl_m_normal', 88), key="lcl_m_normal", step=1)
-        container_40_normal = st.number_input("40'GP", value=freight_data.get('c40_normal', 2613), key="c40_normal", step=1)
+        lcl_m_normal = st.number_input("LCL(M)", value=float(freight_data.get('lcl_m_normal', 88)), key="lcl_m_normal", step=1.0)
+        container_40_normal = st.number_input("40'GP", value=float(freight_data.get('c40_normal', 2613)), key="c40_normal", step=1.0)
     with col_p3:
-        container_40hc_normal = st.number_input("40'HC", value=freight_data.get('c40hc_normal', 3135), key="c40hc_normal", step=1)
+        container_40hc_normal = st.number_input("40'HC", value=float(freight_data.get('c40hc_normal', 3135)), key="c40hc_normal", step=1.0)
 
 with col_freight2:
     st.markdown("### 冻柜单价 (USD)")
     
     col_f1, col_f2, col_f3 = st.columns(3)
     with col_f1:
-        lcl_w_frozen = st.number_input("LCL(W)冻", value=freight_data.get('lcl_w_frozen', 146), key="lcl_w_frozen", step=1)
-        container_20_frozen = st.number_input("20'RF", value=freight_data.get('c20_frozen', 2903), key="c20_frozen", step=1)
+        lcl_w_frozen = st.number_input("LCL(W)冻", value=float(freight_data.get('lcl_w_frozen', 146)), key="lcl_w_frozen", step=1.0)
+        container_20_frozen = st.number_input("20'RF", value=float(freight_data.get('c20_frozen', 2903)), key="c20_frozen", step=1.0)
     with col_f2:
-        lcl_m_frozen = st.number_input("LCL(M)冻", value=freight_data.get('lcl_m_frozen', 189), key="lcl_m_frozen", step=1)
-        container_40_frozen = st.number_input("40'RF", value=freight_data.get('c40_frozen', 5225), key="c40_frozen", step=1)
+        lcl_m_frozen = st.number_input("LCL(M)冻", value=float(freight_data.get('lcl_m_frozen', 189)), key="lcl_m_frozen", step=1.0)
+        container_40_frozen = st.number_input("40'RF", value=float(freight_data.get('c40_frozen', 5225)), key="c40_frozen", step=1.0)
     with col_f3:
-        container_40rh_frozen = st.number_input("40'RH", value=freight_data.get('c40rh_frozen', 6270), key="c40rh_frozen", step=1)
+        container_40rh_frozen = st.number_input("40'RH", value=float(freight_data.get('c40rh_frozen', 6270)), key="c40rh_frozen", step=1.0)
 
 # ==================== 产品信息 ====================
 st.markdown("""
@@ -586,12 +586,16 @@ st.markdown("""
 col_trade1, col_trade2, col_trade3 = st.columns(3)
 
 with col_trade1:
-    quantity = st.number_input("交易数量", value=st.session_state.quantity if st.session_state.quantity > 0 else 0, step=1, key="quantity_input")
-    purchase_price = st.number_input("采购单价", value=st.session_state.purchase_price if st.session_state.purchase_price > 0 else 0, step=100.0, key="purchase_price_input")
+    # 确保值为浮点数
+    quantity_val = float(st.session_state.quantity) if st.session_state.quantity > 0 else 0.0
+    purchase_price_val = float(st.session_state.purchase_price) if st.session_state.purchase_price > 0 else 0.0
+    
+    quantity = st.number_input("交易数量", value=quantity_val, step=1.0, key="quantity_input")
+    purchase_price = st.number_input("采购单价", value=purchase_price_val, step=100.0, format="%.2f", key="purchase_price_input")
 
 with col_trade2:
-    account_balance = st.number_input("账户余额", value=1888000.0, step=1000.0, key="account_balance")
-    exchange_rate = st.number_input("USD/CAD汇率", value=st.session_state.exchange_rate, step=0.001, format="%.3f", key="exchange_rate")
+    account_balance = st.number_input("账户余额", value=1888000.0, step=1000.0, format="%.2f", key="account_balance")
+    exchange_rate = st.number_input("USD/CAD汇率", value=float(st.session_state.exchange_rate), step=0.001, format="%.3f", key="exchange_rate")
 
 with col_trade3:
     trade_term = st.selectbox("贸易术语", ["EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CIP", "DAP", "DPU", "DDP"], 
@@ -601,20 +605,20 @@ with col_trade3:
     expected_profit_rate = st.slider("预期利润率%", 0, 50, 15, key="expected_profit_rate")
     transport_note = st.selectbox("运输要求", ["普通", "冷藏", "冷冻"], key="transport_note")
 
-# 更新session state中的交易信息
-st.session_state.quantity = quantity
-st.session_state.purchase_price = purchase_price
+# 更新session state中的交易信息（确保存储为浮点数）
+st.session_state.quantity = float(quantity)
+st.session_state.purchase_price = float(purchase_price)
 st.session_state.trade_term = trade_term
 st.session_state.payment = payment
-st.session_state.exchange_rate = exchange_rate
+st.session_state.exchange_rate = float(exchange_rate)
 
 # ==================== 提取数值用于计算 ====================
 def extract_number(text):
     try:
         numbers = re.findall(r"[-+]?\d*\.\d+|\d+", str(text))
-        return float(numbers[0]) if numbers else 0
+        return float(numbers[0]) if numbers else 0.0
     except:
-        return 0
+        return 0.0
 
 # 只有有数据时才计算
 if st.session_state.data_updated and st.session_state.product_data and quantity > 0 and purchase_price > 0:
@@ -636,7 +640,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
     st.markdown("### 📦 货物总量")
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     with col_m1:
-        st.metric("总包装数", f"{total_packages:.0f}个")
+        st.metric("总包装数", f"{int(total_packages)}个")
     with col_m2:
         st.metric("总毛重", f"{total_gross:,.0f}KGS")
     with col_m3:
@@ -658,20 +662,20 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
 
     with col_calc1:
         if st.button("🚢 计算运费", use_container_width=True):
-            containers_needed = np.ceil(total_volume / 33)
+            containers_needed = np.ceil(total_volume / 33.0)
             if transport_note in ["冷藏", "冷冻"]:
-                st.session_state.best_freight = containers_needed * container_20_frozen
+                st.session_state.best_freight = float(containers_needed * container_20_frozen)
             else:
-                st.session_state.best_freight = containers_needed * container_20_normal
+                st.session_state.best_freight = float(containers_needed * container_20_normal)
             st.session_state.calculated = True
-            st.success(f"需要 {containers_needed:.0f}个集装箱，运费 ${st.session_state.best_freight:,.2f}")
+            st.success(f"需要 {int(containers_needed)}个集装箱，运费 ${st.session_state.best_freight:,.2f}")
 
     with col_calc2:
         if st.button("💰 计算报价", use_container_width=True):
             purchase_total = purchase_price * quantity
-            rebate = purchase_total / (1 + vat_rate/100) * (export_rebate_rate/100)
+            rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
             total_cost = purchase_total - rebate + (st.session_state.best_freight * exchange_rate)
-            st.session_state.suggested_price = (total_cost * (1 + expected_profit_rate/100)) / quantity / exchange_rate
+            st.session_state.suggested_price = (total_cost * (1.0 + expected_profit_rate/100.0)) / quantity / exchange_rate
             st.session_state.total_cost = total_cost
 
     # 显示计算结果
@@ -687,10 +691,10 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
             
             # 计算总成本
             purchase_total = purchase_price * quantity
-            rebate = purchase_total / (1 + vat_rate/100) * (export_rebate_rate/100)
-            inland_fee = max(50, total_volume * 10) * exchange_rate
-            forwarder_fee = max(70, total_volume * 2.5) * exchange_rate
-            customs_fee = 30 * exchange_rate if trade_term != "EXW" else 0
+            rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
+            inland_fee = max(50.0, total_volume * 10.0) * exchange_rate
+            forwarder_fee = max(70.0, total_volume * 2.5) * exchange_rate
+            customs_fee = 30.0 * exchange_rate if trade_term != "EXW" else 0.0
             total_cost = purchase_total - rebate + inland_fee + forwarder_fee + customs_fee + (st.session_state.best_freight * exchange_rate)
             
             test_price = st.number_input("测试报价", value=float(st.session_state.suggested_price), step=5.0, format="%.2f", key="test_price_input")
@@ -698,7 +702,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
             if test_price > 0:
                 revenue = test_price * quantity * exchange_rate
                 profit = revenue - total_cost
-                profit_margin = profit / purchase_total if purchase_total > 0 else 0
+                profit_margin = profit / purchase_total if purchase_total > 0 else 0.0
                 
                 col_p1, col_p2 = st.columns(2)
                 with col_p1:
@@ -718,20 +722,20 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
 
     # 计算费用
     purchase_total = purchase_price * quantity
-    rebate = purchase_total / (1 + vat_rate/100) * (export_rebate_rate/100)
-    inland_fee = max(50, total_volume * 10) * exchange_rate
-    forwarder_fee = max(70, total_volume * 2.5) * exchange_rate
-    inspection_fee = 30 * exchange_rate if "B" in str(inspection_type) else 0
-    certificate_fee = 100 * exchange_rate if "B" in str(inspection_type) else 0
-    customs_fee = 30 * exchange_rate if trade_term != "EXW" else 0
-    insurance = purchase_total * 1.1 * 0.005 if trade_term in ["CIF", "CIP", "DAP", "DPU", "DDP"] else 0
+    rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
+    inland_fee = max(50.0, total_volume * 10.0) * exchange_rate
+    forwarder_fee = max(70.0, total_volume * 2.5) * exchange_rate
+    inspection_fee = 30.0 * exchange_rate if "B" in str(inspection_type) else 0.0
+    certificate_fee = 100.0 * exchange_rate if "B" in str(inspection_type) else 0.0
+    customs_fee = 30.0 * exchange_rate if trade_term != "EXW" else 0.0
+    insurance = purchase_total * 1.1 * 0.005 if trade_term in ["CIF", "CIP", "DAP", "DPU", "DDP"] else 0.0
 
     if payment in ["D/P", "D/A"]:
-        bank_fee = max(15, min(285, purchase_total * 0.001)) + 45
+        bank_fee = max(15.0, min(285.0, purchase_total * 0.001)) + 45.0
     elif "L/C" in payment:
-        bank_fee = max(15, purchase_total * 0.00125) + 75
+        bank_fee = max(15.0, purchase_total * 0.00125) + 75.0
     else:
-        bank_fee = 0
+        bank_fee = 0.0
 
     domestic_total = inland_fee + forwarder_fee + inspection_fee + certificate_fee + customs_fee + insurance
 
@@ -752,7 +756,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
         <div class="excel-label">1.采购成本</div>
         <div class="excel-sub">含税购入价</div>
         <div class="excel-amount">¥{purchase_total:,.2f}</div>
-        <div class="excel-principle">{purchase_price:.0f} × {quantity}</div>
+        <div class="excel-principle">{purchase_price:.0f} × {int(quantity)}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -762,7 +766,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
         <div class="excel-label">2.退税收入</div>
         <div class="excel-sub">退税额</div>
         <div class="excel-amount">¥{rebate:,.2f}</div>
-        <div class="excel-principle">含税价÷(1+{vat_rate}%)×{export_rebate_rate}%</div>
+        <div class="excel-principle">含税价÷(1+{vat_rate:.0f}%)×{export_rebate_rate:.0f}%</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -772,7 +776,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
         <div class="excel-label">3.国内费用</div>
         <div class="excel-sub">出口内陆运费</div>
         <div class="excel-amount">¥{inland_fee:,.2f}</div>
-        <div class="excel-principle">MAX(50, {total_volume:.1f}×10)×{exchange_rate}</div>
+        <div class="excel-principle">MAX(50, {total_volume:.1f}×10)×{exchange_rate:.3f}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -790,7 +794,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
         <div class="excel-label"></div>
         <div class="excel-sub">出口货代杂费</div>
         <div class="excel-amount">¥{forwarder_fee:,.2f}</div>
-        <div class="excel-principle">MAX(70, {total_volume:.1f}×2.5)×{exchange_rate}</div>
+        <div class="excel-principle">MAX(70, {total_volume:.1f}×2.5)×{exchange_rate:.3f}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -820,7 +824,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
             <div class="excel-label"></div>
             <div class="excel-sub">出口报关费</div>
             <div class="excel-amount">¥{customs_fee:,.2f}</div>
-            <div class="excel-principle">30×{exchange_rate}</div>
+            <div class="excel-principle">30×{exchange_rate:.3f}</div>
         </div>
         """, unsafe_allow_html=True)
 
