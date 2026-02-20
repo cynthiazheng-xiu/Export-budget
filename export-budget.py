@@ -31,27 +31,34 @@ st.markdown("""
         border-radius: 10px;
         margin-bottom: 15px;
     }
-    .exporter-header {
-        background-color: #f0f8ff;
-        padding: 10px 15px;
+    .company-section {
+        background-color: #f8f9fa;
+        padding: 15px;
         border-radius: 8px;
         margin-bottom: 15px;
         border: 1px solid #2a5298;
-        font-size: 0.9rem;
+    }
+    .company-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 20px;
+        gap: 15px;
+        margin-bottom: 8px;
+        font-size: 0.85rem;
     }
-    .exporter-item {
+    .company-row:last-child {
+        margin-bottom: 0;
+    }
+    .company-item {
         display: flex;
         align-items: center;
+        white-space: nowrap;
     }
-    .exporter-label {
+    .company-label {
         font-weight: bold;
         color: #1e3c72;
         margin-right: 5px;
     }
-    .exporter-value {
+    .company-value {
         color: #2a5298;
     }
     .section-title {
@@ -99,10 +106,6 @@ st.markdown("""
         margin: 15px 0;
         flex-wrap: wrap;
         border: 1px solid #2a5298;
-    }
-    .hs-item {
-        flex: 1;
-        min-width: 120px;
     }
     .hs-header {
         font-weight: bold;
@@ -157,11 +160,41 @@ st.markdown("""
         color: #28a745;
         margin-top: 5px;
     }
-    .freight-section {
-        background-color: #f8f9fa;
-        padding: 10px;
-        border-radius: 5px;
+    .freight-container {
+        display: flex;
+        gap: 20px;
         margin: 10px 0;
+    }
+    .freight-table {
+        flex: 1;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        overflow: hidden;
+        font-size: 0.85rem;
+    }
+    .freight-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .freight-table th {
+        background-color: #2a5298;
+        color: white;
+        padding: 6px;
+        text-align: center;
+        font-weight: bold;
+    }
+    .freight-table td {
+        padding: 4px 8px;
+        border: 1px solid #dee2e6;
+    }
+    .freight-label {
+        font-weight: bold;
+        background-color: #e9ecef;
+        width: 40%;
+    }
+    .freight-value {
+        text-align: right;
+        width: 60%;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -176,6 +209,8 @@ if 'last_update_time' not in st.session_state:
     st.session_state.last_update_time = None
 if 'best_freight' not in st.session_state:
     st.session_state.best_freight = 0.0
+if 'best_freight_cny' not in st.session_state:
+    st.session_state.best_freight_cny = 0.0
 if 'containers_needed' not in st.session_state:
     st.session_state.containers_needed = 0
 if 'container_type' not in st.session_state:
@@ -233,6 +268,7 @@ def clear_all_data():
     st.session_state.data_updated = False
     st.session_state.last_update_time = None
     st.session_state.best_freight = 0.0
+    st.session_state.best_freight_cny = 0.0
     st.session_state.containers_needed = 0
     st.session_state.container_type = ""
     st.session_state.suggested_price = 0.0
@@ -322,7 +358,7 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # ==================== 物流信息（运费单价表）====================
+    # ==================== 物流信息（运费单价表-并列表格）====================
     st.markdown("## 📦 运费单价表")
     
     # 安全获取物流数据
@@ -336,68 +372,93 @@ with st.sidebar:
             'c20_frozen': 2903, 'c40_frozen': 5225, 'c40rh_frozen': 6270
         }
     
-    st.markdown('<div class="freight-section">', unsafe_allow_html=True)
-    st.markdown("**普柜单价 (USD)**")
-    col_p1, col_p2 = st.columns(2)
-    with col_p1:
-        lcl_w_normal = st.number_input("LCL(W)", value=float(freight_data.get('lcl_w_normal', 73)), key="lcl_w_normal", step=1.0)
-        container_20_normal = st.number_input("20'GP", value=float(freight_data.get('c20_normal', 1452)), key="c20_normal", step=1.0)
-        container_40_normal = st.number_input("40'GP", value=float(freight_data.get('c40_normal', 2613)), key="c40_normal", step=1.0)
-    with col_p2:
-        lcl_m_normal = st.number_input("LCL(M)", value=float(freight_data.get('lcl_m_normal', 88)), key="lcl_m_normal", step=1.0)
-        container_40hc_normal = st.number_input("40'HC", value=float(freight_data.get('c40hc_normal', 3135)), key="c40hc_normal", step=1.0)
+    # 并列表格显示
+    col_freight1, col_freight2 = st.columns(2)
     
-    st.markdown("**冻柜单价 (USD)**")
-    col_f1, col_f2 = st.columns(2)
-    with col_f1:
-        lcl_w_frozen = st.number_input("LCL(W)冻", value=float(freight_data.get('lcl_w_frozen', 146)), key="lcl_w_frozen", step=1.0)
-        container_20_frozen = st.number_input("20'RF", value=float(freight_data.get('c20_frozen', 2903)), key="c20_frozen", step=1.0)
-        container_40_frozen = st.number_input("40'RF", value=float(freight_data.get('c40_frozen', 5225)), key="c40_frozen", step=1.0)
-    with col_f2:
-        lcl_m_frozen = st.number_input("LCL(M)冻", value=float(freight_data.get('lcl_m_frozen', 189)), key="lcl_m_frozen", step=1.0)
-        container_40rh_frozen = st.number_input("40'RH", value=float(freight_data.get('c40rh_frozen', 6270)), key="c40rh_frozen", step=1.0)
-    st.markdown('</div>', unsafe_allow_html=True)
+    with col_freight1:
+        st.markdown("**普柜单价 (USD)**")
+        freight_table1 = f"""
+        <table class="freight-table">
+            <tr><td class="freight-label">LCL(W)</td><td class="freight-value">{freight_data.get('lcl_w_normal', 73):.2f}</td></tr>
+            <tr><td class="freight-label">LCL(M)</td><td class="freight-value">{freight_data.get('lcl_m_normal', 88):.2f}</td></tr>
+            <tr><td class="freight-label">20'GP</td><td class="freight-value">{freight_data.get('c20_normal', 1452):.2f}</td></tr>
+            <tr><td class="freight-label">40'GP</td><td class="freight-value">{freight_data.get('c40_normal', 2613):.2f}</td></tr>
+            <tr><td class="freight-label">40'HC</td><td class="freight-value">{freight_data.get('c40hc_normal', 3135):.2f}</td></tr>
+        </table>
+        """
+        st.markdown(freight_table1, unsafe_allow_html=True)
+    
+    with col_freight2:
+        st.markdown("**冻柜单价 (USD)**")
+        freight_table2 = f"""
+        <table class="freight-table">
+            <tr><td class="freight-label">LCL(W)冻</td><td class="freight-value">{freight_data.get('lcl_w_frozen', 146):.2f}</td></tr>
+            <tr><td class="freight-label">LCL(M)冻</td><td class="freight-value">{freight_data.get('lcl_m_frozen', 189):.2f}</td></tr>
+            <tr><td class="freight-label">20'RF</td><td class="freight-value">{freight_data.get('c20_frozen', 2903):.2f}</td></tr>
+            <tr><td class="freight-label">40'RF</td><td class="freight-value">{freight_data.get('c40_frozen', 5225):.2f}</td></tr>
+            <tr><td class="freight-label">40'RH</td><td class="freight-value">{freight_data.get('c40rh_frozen', 6270):.2f}</td></tr>
+        </table>
+        """
+        st.markdown(freight_table2, unsafe_allow_html=True)
 
-# ==================== 出口商信息（表头最上方）====================
-st.markdown('<div class="exporter-header">', unsafe_allow_html=True)
+# ==================== 公司信息（左右两列紧凑显示）====================
+st.markdown('<div class="company-section">', unsafe_allow_html=True)
+
+# 出口商信息（左侧）
+st.markdown("**🏭 出口商信息**")
 st.markdown(f"""
-    <div class="exporter-item">
-        <span class="exporter-label">出口商：</span>
-        <span class="exporter-value">{st.session_state.customer_data["exporter_name"]} ({st.session_state.customer_data["exporter_name_en"]})</span>
-    </div>
-    <div class="exporter-item">
-        <span class="exporter-label">联系人：</span>
-        <span class="exporter-value">{st.session_state.customer_data["exporter_contact"]} | {st.session_state.customer_data["exporter_tel"]}</span>
-    </div>
-    <div class="exporter-item">
-        <span class="exporter-label">地址：</span>
-        <span class="exporter-value">{st.session_state.customer_data["exporter_address"]}</span>
-    </div>
+<div class="company-row">
+    <div class="company-item"><span class="company-label">公司全称：</span><span class="company-value">{st.session_state.customer_data["exporter_name"]}</span></div>
+    <div class="company-item"><span class="company-label">公司简称：</span><span class="company-value">{st.session_state.customer_data["exporter_name_short"]}</span></div>
+    <div class="company-item"><span class="company-label">英文名称：</span><span class="company-value">{st.session_state.customer_data["exporter_name_en"]}</span></div>
+</div>
+<div class="company-row">
+    <div class="company-item"><span class="company-label">公司地址：</span><span class="company-value">{st.session_state.customer_data["exporter_address"]}</span></div>
+    <div class="company-item"><span class="company-label">地址英文：</span><span class="company-value">{st.session_state.customer_data["exporter_address_en"]}</span></div>
+</div>
+<div class="company-row">
+    <div class="company-item"><span class="company-label">企业法人：</span><span class="company-value">{st.session_state.customer_data["exporter_contact"]} ({st.session_state.customer_data["exporter_contact_en"]})</span></div>
+    <div class="company-item"><span class="company-label">电话/传真：</span><span class="company-value">{st.session_state.customer_data["exporter_tel"]}</span></div>
+    <div class="company-item"><span class="company-label">电子邮件：</span><span class="company-value">{st.session_state.customer_data["exporter_email"]}</span></div>
+</div>
+<div class="company-row">
+    <div class="company-item"><span class="company-label">邮政编码：</span><span class="company-value">{st.session_state.customer_data["exporter_postal"]}</span></div>
+    <div class="company-item"><span class="company-label">组织机构代码：</span><span class="company-value">{st.session_state.customer_data["exporter_org_code"]}</span></div>
+    <div class="company-item"><span class="company-label">社会信用代码：</span><span class="company-value">{st.session_state.customer_data["exporter_social_code"]}</span></div>
+</div>
+<div class="company-row">
+    <div class="company-item"><span class="company-label">海关代码：</span><span class="company-value">{st.session_state.customer_data["exporter_customs_code"]}</span></div>
+    <div class="company-item"><span class="company-label">报检登记号：</span><span class="company-value">{st.session_state.customer_data["exporter_inspection_code"]}</span></div>
+</div>
 """, unsafe_allow_html=True)
+
+st.markdown("<hr style='margin: 10px 0; border-top: 1px dashed #2a5298;'>", unsafe_allow_html=True)
+
+# 进口商信息（右侧）
+st.markdown("**🌍 进口商信息**")
+st.markdown(f"""
+<div class="company-row">
+    <div class="company-item"><span class="company-label">公司名称：</span><span class="company-value">{st.session_state.customer_data["importer_name"]}</span></div>
+    <div class="company-item"><span class="company-label">英文名称：</span><span class="company-value">{st.session_state.customer_data["importer_name_en"]}</span></div>
+</div>
+<div class="company-row">
+    <div class="company-item"><span class="company-label">公司地址：</span><span class="company-value">{st.session_state.customer_data["importer_address"]}</span></div>
+    <div class="company-item"><span class="company-label">地址英文：</span><span class="company-value">{st.session_state.customer_data["importer_address_en"]}</span></div>
+</div>
+<div class="company-row">
+    <div class="company-item"><span class="company-label">联系人：</span><span class="company-value">{st.session_state.customer_data["importer_contact"]} ({st.session_state.customer_data["importer_contact_en"]})</span></div>
+    <div class="company-item"><span class="company-label">电话：</span><span class="company-value">{st.session_state.customer_data["importer_tel"]}</span></div>
+    <div class="company-item"><span class="company-label">邮箱：</span><span class="company-value">{st.session_state.customer_data["importer_email"]}</span></div>
+</div>
+<div class="company-row">
+    <div class="company-item"><span class="company-label">邮政编码：</span><span class="company-value">{st.session_state.customer_data["importer_postal"]}</span></div>
+    <div class="company-item"><span class="company-label">组织机构代码：</span><span class="company-value">{st.session_state.customer_data["importer_org_code"]}</span></div>
+    <div class="company-item"><span class="company-label">报检登记号：</span><span class="company-value">{st.session_state.customer_data["importer_inspection_code"]}</span></div>
+    <div class="company-item"><span class="company-label">海关代码：</span><span class="company-value">{st.session_state.customer_data["importer_customs_code"]}</span></div>
+</div>
+""", unsafe_allow_html=True)
+
 st.markdown('</div>', unsafe_allow_html=True)
-
-# ==================== 进口商信息（3列）====================
-st.markdown('<div class="section-title">🌍 进口商信息</div>', unsafe_allow_html=True)
-
-col_imp1, col_imp2, col_imp3 = st.columns(3)
-
-with col_imp1:
-    st.markdown("**公司名称**")
-    st.info(st.session_state.customer_data["importer_name"])
-    st.markdown("**英文名称**")
-    st.info(st.session_state.customer_data["importer_name_en"])
-
-with col_imp2:
-    st.markdown("**联系人**")
-    st.info(f"{st.session_state.customer_data['importer_contact']} ({st.session_state.customer_data['importer_contact_en']})")
-    st.markdown("**电话/邮箱**")
-    st.info(f"{st.session_state.customer_data['importer_tel']} | {st.session_state.customer_data['importer_email']}")
-
-with col_imp3:
-    st.markdown("**公司地址**")
-    st.info(st.session_state.customer_data["importer_address"])
-    st.markdown("**地址英文**")
-    st.info(st.session_state.customer_data["importer_address_en"])
 
 # ==================== HS信息（带抬头）====================
 st.markdown('<div class="section-title">🏷️ HS编码信息</div>', unsafe_allow_html=True)
@@ -526,6 +587,10 @@ def extract_number(text):
     except:
         return 0.0
 
+# 获取运费单价的值（从侧边栏的输入框）
+container_20_normal = st.session_state.get('c20_normal', 1452)
+container_20_frozen = st.session_state.get('c20_frozen', 2903)
+
 # 只有有数据时才计算
 if st.session_state.data_updated and st.session_state.product_data and quantity > 0 and purchase_price > 0:
     single_gross = extract_number(gross_weight)
@@ -576,8 +641,9 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
                 st.session_state.best_freight = float(containers_needed * container_20_normal)
                 st.session_state.container_type = "20'普柜"
             st.session_state.containers_needed = int(containers_needed)
+            st.session_state.best_freight_cny = st.session_state.best_freight * st.session_state.exchange_rate
             st.session_state.calculated = True
-            st.success(f"需要 {int(containers_needed)}个 {st.session_state.container_type}，运费 ${st.session_state.best_freight:,.2f}")
+            st.success(f"需要 {int(containers_needed)}个 {st.session_state.container_type}，运费 ${st.session_state.best_freight:,.2f} (¥{st.session_state.best_freight_cny:,.2f})")
 
     with col_calc2:
         if st.button("💰 计算报价", use_container_width=True):
@@ -693,8 +759,8 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
     <div class="excel-row">
         <div class="excel-label"></div>
         <div class="excel-sub">国际运费</div>
-        <div class="excel-amount">${st.session_state.best_freight:,.2f}</div>
-        <div class="excel-principle">{st.session_state.containers_needed}个{st.session_state.container_type}</div>
+        <div class="excel-amount">¥{st.session_state.best_freight_cny:,.2f}</div>
+        <div class="excel-principle">{st.session_state.containers_needed}个{st.session_state.container_type} (${st.session_state.best_freight:,.2f} × {st.session_state.exchange_rate:.3f})</div>
     </div>
     """, unsafe_allow_html=True)
 
