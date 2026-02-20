@@ -173,9 +173,12 @@ with col_pad1:
             "数据抓取完成！"
         ]
         
+        total_steps = len(steps)
         for i, step in enumerate(steps):
             status_text.text(f"⏳ {step}")
-            progress_bar.progress((i + 1) * 15)
+            # 确保进度值在0-100之间
+            progress_value = int((i + 1) * 100 / total_steps)
+            progress_bar.progress(progress_value)
             time.sleep(0.3)
         
         # 抓取到的数据
@@ -383,7 +386,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 交易信息始终显示，但默认值为0
 col_trade1, col_trade2, col_trade3 = st.columns(3)
 
 with col_trade1:
