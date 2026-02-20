@@ -111,13 +111,19 @@ st.markdown("""
         margin-bottom: 20px;
         border: 1px solid #b8daff;
     }
+    .sidebar-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # 标题
 st.markdown('<div class="main-title">📊 出口预算表 - 全国职业院校技能大赛版</div>', unsafe_allow_html=True)
 
-# ==================== 侧边栏：抓取控制 ====================
+# ==================== 侧边栏 ====================
 with st.sidebar:
     st.markdown("## 📁 数据抓取控制")
     
@@ -140,6 +146,70 @@ with st.sidebar:
         st.caption(f"最后更新: {st.session_state.last_update_time.strftime('%H:%M:%S')}")
     
     st.markdown("---")
+    
+    # ==================== 装运港和目的港信息 ====================
+    st.markdown("## 🚢 港口信息")
+    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    
+    col_port1, col_port2 = st.columns(2)
+    with col_port1:
+        st.markdown("**装运港**")
+        export_country = st.text_input("出口国", "China", key="export_country")
+        loading_port = st.text_input("装运港", "Shanghai", key="loading_port")
+    
+    with col_port2:
+        st.markdown("**目的港**")
+        import_country = st.text_input("进口国", "Canada", key="import_country")
+        destination_port = st.text_input("目的港", "Vancouver", key="destination_port")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # ==================== HS信息 ====================
+    st.markdown("## 🏷️ HS信息")
+    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    
+    hs_code = st.text_input("HS编码", "8476810000", key="hs_code")
+    customs_condition = st.text_input("海关监管条件", "无", key="customs_condition")
+    inspection_type = st.text_input("检验检疫类别", "无", key="inspection_type")
+    legal_unit = st.text_input("法定单位", "台(SET)", key="legal_unit")
+    
+    col_hs1, col_hs2 = st.columns(2)
+    with col_hs1:
+        pref_tax_rate = st.number_input("优惠税率(%)", value=50, key="pref_tax_rate")
+        vat_rate = st.number_input("增值税率(%)", value=13, key="vat_rate")
+    with col_hs2:
+        export_tax_rate = st.number_input("出口税率(%)", value=0, key="export_tax_rate")
+        export_rebate_rate = st.number_input("出口退税率(%)", value=13, key="export_rebate_rate")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # ==================== 物流信息 ====================
+    st.markdown("## 📦 物流信息")
+    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    
+    st.markdown("**普柜单价 (USD)**")
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        lcl_w_normal = st.number_input("LCL(W)", value=73, key="lcl_w_normal")
+        container_20_normal = st.number_input("20'GP", value=1452, key="container_20_normal")
+        container_40_normal = st.number_input("40'GP", value=2613, key="container_40_normal")
+    with col_p2:
+        lcl_m_normal = st.number_input("LCL(M)", value=88, key="lcl_m_normal")
+        container_40hc_normal = st.number_input("40'HC", value=3135, key="container_40hc_normal")
+    
+    st.markdown("**冻柜单价 (USD)**")
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        lcl_w_frozen = st.number_input("LCL(W)冻", value=146, key="lcl_w_frozen")
+        container_20_frozen = st.number_input("20'RF", value=2903, key="container_20_frozen")
+        container_40_frozen = st.number_input("40'RF", value=5225, key="container_40_frozen")
+    with col_f2:
+        lcl_m_frozen = st.number_input("LCL(M)冻", value=189, key="lcl_m_frozen")
+        container_40rh_frozen = st.number_input("40'RH", value=6270, key="container_40rh_frozen")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown("---")
     st.markdown("📁 数据来源: C:\\Basic Information\\Data.xlsx")
 
 # ==================== 初始化session state ====================
@@ -153,6 +223,23 @@ if 'suggested_price' not in st.session_state:
     st.session_state.suggested_price = 0
 if 'calculated' not in st.session_state:
     st.session_state.calculated = False
+
+# ==================== 默认产品数据 ====================
+default_product = {
+    'product_code': 'P010',
+    'product_name': '自动售货机',
+    'product_name_en': 'Vending machine',
+    'product_type': '机器、机械器具、电气设备及其零件',
+    'model_cn': '型号：MF-782',
+    'model_en': 'Model:mf-782',
+    'sales_unit': '台(SET)',
+    'package_unit': '托盘(PALLET)',
+    'unit_conversion': '1 SET/PALLET',
+    'gross_weight': '280.00KGS/托盘',
+    'net_weight': '220.00KGS/托盘',
+    'volume': '2.55CBM/托盘',
+    'transport_desc': '无'
+}
 
 # ==================== 公司信息（页面最上方）====================
 st.markdown("""
@@ -196,11 +283,6 @@ with col_company_left:
         exporter_customs_code = st.text_input("海关代码", "2100151282", key="exporter_customs_code")
     
     exporter_inspection_code = st.text_input("报检登记号", "3100212576", key="exporter_inspection_code")
-    
-    # 装运港信息
-    st.markdown("#### 🚢 装运港信息")
-    export_country = st.text_input("出口国", "China", key="export_country")
-    loading_port = st.text_input("装运港", "Shanghai", key="loading_port")
 
 with col_company_right:
     st.markdown("### 🌍 进口商信息")
@@ -227,53 +309,8 @@ with col_company_right:
     with col_code4:
         importer_inspection_code = st.text_input("进口商报检登记号", "2910087056", key="importer_inspection_code")
         importer_customs_code = st.text_input("进口商海关代码", "2660935964", key="importer_customs_code")
-    
-    # 目的港信息
-    st.markdown("#### 🚢 目的港信息")
-    import_country = st.text_input("进口国", "Canada", key="import_country")
-    destination_port = st.text_input("目的港", "Vancouver", key="destination_port")
 
 st.markdown('</div>', unsafe_allow_html=True)
-
-# ==================== 默认数据（仅在抓取后显示）====================
-default_product = {
-    'product_code': 'P010',
-    'product_name': '自动售货机',
-    'product_name_en': 'Vending machine',
-    'product_type': '机器、机械器具、电气设备及其零件',
-    'model_cn': '型号：MF-782',
-    'model_en': 'Model:mf-782',
-    'sales_unit': '台(SET)',
-    'package_unit': '托盘(PALLET)',
-    'unit_conversion': '1 SET/PALLET',
-    'gross_weight': '280.00KGS/托盘',
-    'net_weight': '220.00KGS/托盘',
-    'volume': '2.55CBM/托盘',
-    'transport_desc': '无'
-}
-
-default_hs = {
-    'hs_code': '8476810000',
-    'customs_condition': '无',
-    'inspection_type': '无',
-    'legal_unit': '台(SET)',
-    'pref_tax_rate': 50,
-    'vat_rate': 13,
-    'export_rebate_rate': 13
-}
-
-default_freight = {
-    'lcl_w_normal': 73,
-    'lcl_m_normal': 88,
-    'container_20_normal': 1452,
-    'container_40_normal': 2613,
-    'container_40hc_normal': 3135,
-    'lcl_w_frozen': 146,
-    'lcl_m_frozen': 189,
-    'container_20_frozen': 2903,
-    'container_40_frozen': 5225,
-    'container_40rh_frozen': 6270
-}
 
 # ==================== 第一步：产品信息 ====================
 st.markdown("""
@@ -311,82 +348,11 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-# ==================== 第二步：HS信息 ====================
+# ==================== 第二步：交易信息 ====================
 st.markdown("""
 <div class="step-container">
     <div class="step-header">
         <span class="step-badge">第二步</span>
-        <span class="step-title">HS信息</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-if st.session_state.data_updated:
-    col_hs1, col_hs2 = st.columns(2)
-
-    with col_hs1:
-        hs_code = st.text_input("HS编码", value=default_hs['hs_code'], key="hs_code")
-        customs_condition = st.text_input("海关监管条件", value=default_hs['customs_condition'], key="customs_condition")
-        inspection_type = st.text_input("检验检疫类别", value=default_hs['inspection_type'], key="inspection_type")
-
-    with col_hs2:
-        legal_unit = st.text_input("法定单位", value=default_hs['legal_unit'], key="legal_unit")
-        pref_tax_rate = st.number_input("优惠税率(%)", value=default_hs['pref_tax_rate'], key="pref_tax_rate")
-        vat_rate = st.number_input("增值税率(%)", value=default_hs['vat_rate'], key="vat_rate")
-        export_rebate_rate = st.number_input("出口退税率(%)", value=default_hs['export_rebate_rate'], key="export_rebate_rate")
-else:
-    st.markdown("""
-    <div class="empty-state">
-        ⏳ 请先抓取数据获取HS信息
-    </div>
-    """, unsafe_allow_html=True)
-
-# ==================== 第三步：物流信息 ====================
-st.markdown("""
-<div class="step-container">
-    <div class="step-header">
-        <span class="step-badge">第三步</span>
-        <span class="step-title">物流信息</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-if st.session_state.data_updated:
-    col_log1, col_log2 = st.columns(2)
-
-    with col_log1:
-        st.markdown("**普柜单价 (USD)**")
-        col_p1, col_p2 = st.columns(2)
-        with col_p1:
-            lcl_w_normal = st.number_input("LCL(W)", value=default_freight['lcl_w_normal'], key="lcl_w_normal")
-            container_20_normal = st.number_input("20'GP", value=default_freight['container_20_normal'], key="container_20_normal")
-            container_40_normal = st.number_input("40'GP", value=default_freight['container_40_normal'], key="container_40_normal")
-        with col_p2:
-            lcl_m_normal = st.number_input("LCL(M)", value=default_freight['lcl_m_normal'], key="lcl_m_normal")
-            container_40hc_normal = st.number_input("40'HC", value=default_freight['container_40hc_normal'], key="container_40hc_normal")
-
-    with col_log2:
-        st.markdown("**冻柜单价 (USD)**")
-        col_f1, col_f2 = st.columns(2)
-        with col_f1:
-            lcl_w_frozen = st.number_input("LCL(W)冻", value=default_freight['lcl_w_frozen'], key="lcl_w_frozen")
-            container_20_frozen = st.number_input("20'RF", value=default_freight['container_20_frozen'], key="container_20_frozen")
-            container_40_frozen = st.number_input("40'RF", value=default_freight['container_40_frozen'], key="container_40_frozen")
-        with col_f2:
-            lcl_m_frozen = st.number_input("LCL(M)冻", value=default_freight['lcl_m_frozen'], key="lcl_m_frozen")
-            container_40rh_frozen = st.number_input("40'RH", value=default_freight['container_40rh_frozen'], key="container_40rh_frozen")
-else:
-    st.markdown("""
-    <div class="empty-state">
-        ⏳ 请先抓取数据获取物流信息
-    </div>
-    """, unsafe_allow_html=True)
-
-# ==================== 第四步：交易信息 ====================
-st.markdown("""
-<div class="step-container">
-    <div class="step-header">
-        <span class="step-badge">第四步</span>
         <span class="step-title">交易信息</span>
     </div>
 </div>
@@ -444,11 +410,11 @@ if st.session_state.data_updated:
     with col_m4:
         st.metric("总体积", f"{total_volume:.2f} CBM")
 
-    # ==================== 第五步：计算报价 ====================
+    # ==================== 第三步：计算报价 ====================
     st.markdown("""
     <div class="step-container">
         <div class="step-header">
-            <span class="step-badge">第五步</span>
+            <span class="step-badge">第三步</span>
             <span class="step-title">计算报价</span>
         </div>
     </div>
@@ -511,11 +477,11 @@ if st.session_state.data_updated:
                     delta = "✅" if profit_margin >= target else "❌"
                     st.metric("利润率", f"{profit_margin:.1%}", delta=delta)
 
-    # ==================== 第六步：出口预算表 ====================
+    # ==================== 第四步：出口预算表 ====================
     st.markdown("""
     <div class="step-container">
         <div class="step-header">
-            <span class="step-badge">第六步</span>
+            <span class="step-badge">第四步</span>
             <span class="step-title">出口预算表</span>
         </div>
     </div>
