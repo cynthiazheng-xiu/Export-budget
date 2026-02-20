@@ -196,6 +196,14 @@ st.markdown("""
         text-align: right;
         width: 60%;
     }
+    .button-row {
+        display: flex;
+        gap: 10px;
+        margin: 15px 0;
+    }
+    .calc-button {
+        flex: 1;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -217,6 +225,8 @@ if 'container_type' not in st.session_state:
     st.session_state.container_type = ""
 if 'suggested_price' not in st.session_state:
     st.session_state.suggested_price = 0.0
+if 'total_cost' not in st.session_state:
+    st.session_state.total_cost = 0.0
 if 'calculated' not in st.session_state:
     st.session_state.calculated = False
 if 'customer_data' not in st.session_state:
@@ -272,6 +282,7 @@ def clear_all_data():
     st.session_state.containers_needed = 0
     st.session_state.container_type = ""
     st.session_state.suggested_price = 0.0
+    st.session_state.total_cost = 0.0
     st.session_state.calculated = False
     st.session_state.product_data = None
     st.session_state.freight_data = None
@@ -587,9 +598,13 @@ def extract_number(text):
     except:
         return 0.0
 
-# 获取运费单价的值（从侧边栏的输入框）
-container_20_normal = st.session_state.get('c20_normal', 1452)
-container_20_frozen = st.session_state.get('c20_frozen', 2903)
+# 获取运费单价的值（从侧边栏的表格中读取）
+if st.session_state.freight_data:
+    container_20_normal = st.session_state.freight_data.get('c20_normal', 1452)
+    container_20_frozen = st.session_state.freight_data.get('c20_frozen', 2903)
+else:
+    container_20_normal = 1452
+    container_20_frozen = 2903
 
 # 只有有数据时才计算
 if st.session_state.data_updated and st.session_state.product_data and quantity > 0 and purchase_price > 0:
@@ -652,38 +667,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
             total_cost = purchase_total - rebate + (st.session_state.best_freight * st.session_state.exchange_rate)
             st.session_state.suggested_price = (total_cost * (1.0 + expected_profit_rate/100.0)) / quantity / st.session_state.exchange_rate
             st.session_state.total_cost = total_cost
-
-    # 显示计算结果
-    if st.session_state.calculated and st.session_state.suggested_price > 0:
-        col_res1, col_res2 = st.columns(2)
-        
-        with col_res1:
-            st.markdown("##### 💰 建议报价")
-            st.markdown(f"<div class='result-box'>${st.session_state.suggested_price:.2f}/台</div>", unsafe_allow_html=True)
-        
-        with col_res2:
-            st.markdown("##### 📈 反算利润率")
-            
-            # 计算总成本
-            purchase_total = purchase_price * quantity
-            rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
-            inland_fee = max(50.0, total_volume * 10.0) * st.session_state.exchange_rate
-            forwarder_fee = max(70.0, total_volume * 2.5) * st.session_state.exchange_rate
-            customs_fee = 30.0 * st.session_state.exchange_rate if trade_term != "EXW" else 0.0
-            total_cost = purchase_total - rebate + inland_fee + forwarder_fee + customs_fee + (st.session_state.best_freight * st.session_state.exchange_rate)
-            
-            test_price = st.number_input("测试报价", value=float(st.session_state.suggested_price), step=5.0, format="%.2f", key="test_price_input")
-            
-            if test_price > 0:
-                revenue = test_price * quantity * st.session_state.exchange_rate
-                profit = revenue - total_cost
-                profit_margin = profit / purchase_total if purchase_total > 0 else 0.0
-                
-                col_p1, col_p2 = st.columns(2)
-                with col_p1:
-                    st.metric("利润", f"¥{profit:,.0f}")
-                with col_p2:
-                    st.metric("利润率", f"{profit_margin:.1%}")
+            st.success(f"建议报价: ${st.session_state.suggested_price:.2f}/台")
 
     # ==================== 出口预算表 ====================
     st.markdown("""
@@ -848,6 +832,35 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
     """, unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
+
+    # ==================== 反算利润率 ====================
+    st.markdown("### 📈 反算利润率")
+
+    test_price = st.number_input("输入测试报价 (USD/台)", 
+                                value=float(st.session_state.suggested_price) if st.session_state.suggested_price > 0 else 100.0, 
+                                step=5.0, format="%.2f", key="test_price_input")
+
+    if test_price > 0 and st.session_state.best_freight > 0:
+        purchase_total = purchase_price * quantity
+        rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
+        inland_fee = max(50.0, total_volume * 10.0) * st.session_state.exchange_rate
+        forwarder_fee = max(70.0, total_volume * 2.5) * st.session_state.exchange_rate
+        customs_fee = 30.0 * st.session_state.exchange_rate if trade_term != "EXW" else 0.0
+        total_cost = purchase_total - rebate + inland_fee + forwarder_fee + customs_fee + (st.session_state.best_freight * st.session_state.exchange_rate)
+        
+        revenue = test_price * quantity * st.session_state.exchange_rate
+        profit = revenue - total_cost
+        profit_margin = profit / purchase_total if purchase_total > 0 else 0.0
+        
+        col_r1, col_r2, col_r3 = st.columns(3)
+        with col_r1:
+            st.metric("总收入", f"¥{revenue:,.2f}")
+        with col_r2:
+            st.metric("预期利润", f"¥{profit:,.2f}")
+        with col_r3:
+            target = expected_profit_rate / 100.0
+            delta = "✅ 达到目标" if profit_margin >= target else "❌ 低于目标"
+            st.metric("实际利润率", f"{profit_margin:.1%}", delta=delta)
 
 else:
     st.markdown("""
