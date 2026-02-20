@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import re
-import os
-import openpyxl
+import time
+import random
 
 # 页面配置
 st.set_page_config(
@@ -58,47 +58,41 @@ st.markdown("""
         color: #1e3c72;
         font-weight: 600;
     }
-    .fetch-button {
-        background-color: #28a745;
+    .pad-button {
+        background-color: #ff6b6b;
         color: white;
+        padding: 15px 30px;
+        border-radius: 50px;
+        font-size: 1.3rem;
+        font-weight: bold;
         border: none;
-        padding: 5px 15px;
-        border-radius: 5px;
         cursor: pointer;
-        font-size: 0.9rem;
+        width: 100%;
+        margin: 20px 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s;
     }
-    .fetch-button:hover {
-        background-color: #218838;
+    .pad-button:hover {
+        background-color: #ff5252;
+        transform: scale(1.02);
+        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
     }
-    .search-box {
-        background-color: #e3f2fd;
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #2196f3;
-        margin-bottom: 15px;
+    .pad-button:active {
+        transform: scale(0.98);
     }
-    .file-path {
-        font-family: monospace;
-        background-color: #f5f5f5;
-        padding: 5px 10px;
-        border-radius: 3px;
-        border: 1px solid #ddd;
-    }
-    .success-message {
+    .status-box {
         background-color: #d4edda;
-        color: #155724;
-        padding: 10px;
-        border-radius: 5px;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
         border: 1px solid #c3e6cb;
-        margin: 10px 0;
     }
-    .error-message {
-        background-color: #f8d7da;
-        color: #721c24;
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #f5c6cb;
-        margin: 10px 0;
+    .simulation-box {
+        background-color: #fff3cd;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+        border: 1px solid #ffc107;
     }
     .excel-table {
         background-color: white;
@@ -125,9 +119,6 @@ st.markdown("""
     .excel-row:nth-child(even) {
         background-color: #f8f9fa;
     }
-    .excel-row:hover {
-        background-color: #e9ecef;
-    }
     .result-box {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -142,93 +133,21 @@ st.markdown("""
 # 标题
 st.markdown('<div class="main-title">📊 出口预算表 - 全国职业院校技能大赛版</div>', unsafe_allow_html=True)
 
-# ==================== Excel文件路径设置 ====================
-st.sidebar.markdown("### 📁 Excel数据源设置")
-excel_path = st.sidebar.text_input("Excel文件路径", value=r"C:\Basic Information\Data.xlsx")
-st.sidebar.markdown(f"<div class='file-path'>当前路径: {excel_path}</div>", unsafe_allow_html=True)
-
-# 检查文件是否存在
-file_exists = os.path.exists(excel_path)
-if file_exists:
-    st.sidebar.success("✅ Excel文件存在")
-else:
-    st.sidebar.error("❌ Excel文件不存在，请检查路径")
-
-# ==================== 读取Excel表格的函数 ====================
-@st.cache_data(ttl=10)  # 缓存10秒，这样文件更新后可以重新读取
-def read_excel_sheet(file_path, sheet_name):
-    """读取Excel指定sheet"""
-    try:
-        if os.path.exists(file_path):
-            df = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
-            return df
-        else:
-            return None
-    except Exception as e:
-        st.error(f"读取Excel出错: {str(e)}")
-        return None
-
-# ==================== 从商品信息表查找商品的函数 ====================
-def find_product_by_code_or_name(df, search_term):
-    """根据商品编号或英文名称查找商品"""
-    if df is None or df.empty:
-        return None
-    
-    # 假设商品信息表的格式：
-    # 第4行开始是数据，D列是商品编号，E列是商品名称，F列是英文名称
-    try:
-        # 获取数据区域（从第4行开始）
-        data = df.iloc[3:].copy()
-        data.columns = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U']
-        
-        # 查找匹配的行
-        mask = (data['D'].astype(str).str.contains(str(search_term), na=False)) | \
-               (data['F'].astype(str).str.contains(str(search_term), na=False, case=False))
-        
-        matches = data[mask]
-        if not matches.empty:
-            return matches.iloc[0].to_dict()
-        return None
-    except Exception as e:
-        st.error(f"查找商品出错: {str(e)}")
-        return None
-
-# ==================== 从HS表查找的函数 ====================
-def find_hs_by_code(df, hs_code):
-    """根据HS编码查找HS信息"""
-    if df is None or df.empty:
-        return None
-    
-    try:
-        # HS表格式：第4行开始是数据，D列是HS编码
-        data = df.iloc[3:].copy()
-        data.columns = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
-        
-        mask = data['D'].astype(str).str.contains(str(hs_code), na=False)
-        matches = data[mask]
-        if not matches.empty:
-            return matches.iloc[0].to_dict()
-        return None
-    except Exception as e:
-        st.error(f"查找HS信息出错: {str(e)}")
-        return None
-
-# ==================== 从运费单价表查找的函数 ====================
-def find_freight_by_route(df, export_country, import_country):
-    """根据进出口国查找运费单价"""
-    if df is None or df.empty:
-        return None
-    
-    try:
-        # 运费单价表格式
-        data = df.iloc[3:].copy()  # 从第4行开始
-        # 这里需要根据实际的Excel结构调整列映射
-        return None
-    except Exception as e:
-        st.error(f"查找运费信息出错: {str(e)}")
-        return None
-
 # ==================== 初始化session state ====================
+if 'product_data' not in st.session_state:
+    st.session_state.product_data = {}
+if 'hs_data' not in st.session_state:
+    st.session_state.hs_data = {}
+if 'freight_data' not in st.session_state:
+    st.session_state.freight_data = {}
+if 'customer_data' not in st.session_state:
+    st.session_state.customer_data = {}
+if 'data_updated' not in st.session_state:
+    st.session_state.data_updated = False
+if 'last_update_time' not in st.session_state:
+    st.session_state.last_update_time = None
+if 'pad_running' not in st.session_state:
+    st.session_state.pad_running = False
 if 'best_freight' not in st.session_state:
     st.session_state.best_freight = 0
 if 'best_container' not in st.session_state:
@@ -239,10 +158,114 @@ if 'suggested_price' not in st.session_state:
     st.session_state.suggested_price = 0
 if 'calculated' not in st.session_state:
     st.session_state.calculated = False
-if 'product_data' not in st.session_state:
-    st.session_state.product_data = {}
-if 'hs_data' not in st.session_state:
-    st.session_state.hs_data = {}
+
+# ==================== PAD模拟抓取按钮 ====================
+st.markdown("""
+<div class="step-container">
+    <div class="step-header">
+        <span class="step-badge">PAD抓取</span>
+        <span class="step-title">Power Automate Desktop 模拟数据抓取</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+col_pad1, col_pad2, col_pad3 = st.columns([1,2,1])
+with col_pad2:
+    if st.button("🚀 启动PAD模拟抓取数据", use_container_width=True):
+        st.session_state.pad_running = True
+        st.session_state.data_updated = False
+        
+        # 创建进度条模拟PAD运行
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        # 模拟PAD抓取过程
+        steps = [
+            "正在启动Power Automate Desktop...",
+            "正在打开Excel文件 C:\\Basic Information\\Data.xlsx...",
+            "正在读取商品信息表...",
+            "正在读取HS编码表...",
+            "正在读取运费单价表...",
+            "正在读取汇率表...",
+            "正在读取客户信息表...",
+            "正在整理数据...",
+            "正在准备填入Web界面...",
+            "数据抓取完成！"
+        ]
+        
+        for i, step in enumerate(steps):
+            status_text.text(f"⏳ {step}")
+            progress_bar.progress((i + 1) * 10)
+            time.sleep(0.5)  # 模拟处理时间
+        
+        # 模拟抓取到的数据（示例数据）
+        st.session_state.product_data = {
+            'product_code': 'P010',
+            'product_name': '自动售货机',
+            'product_name_en': 'Vending machine',
+            'product_type': '机器、机械器具、电气设备及其零件',
+            'model_cn': '型号：MF-782',
+            'model_en': 'Model:mf-782',
+            'sales_unit': '台(SET)',
+            'package_unit': '托盘(PALLET)',
+            'unit_conversion': '1 SET/PALLET',
+            'gross_weight': '280.00KGS/托盘',
+            'net_weight': '220.00KGS/托盘',
+            'volume': '2.55CBM/托盘',
+            'transport_desc': '无'
+        }
+        
+        st.session_state.hs_data = {
+            'hs_code': '8476810000',
+            'customs_condition': '无',
+            'inspection_type': '无',
+            'legal_unit': '台(SET)',
+            'pref_tax_rate': 50,
+            'vat_rate': 13,
+            'export_rebate_rate': 13
+        }
+        
+        st.session_state.freight_data = {
+            'lcl_w_normal': 73,
+            'lcl_m_normal': 88,
+            'container_20_normal': 1452,
+            'container_40_normal': 2613,
+            'container_40hc_normal': 3135,
+            'lcl_w_frozen': 146,
+            'lcl_m_frozen': 189,
+            'container_20_frozen': 2903,
+            'container_40_frozen': 5225,
+            'container_40rh_frozen': 6270
+        }
+        
+        st.session_state.customer_data = {
+            'exporter_name': '平尼克国际贸易公司',
+            'exporter_name_short': '平尼克国际',
+            'exporter_name_en': 'Pinic International Trading',
+            'exporter_address': '菲律宾马尼拉宾农多马德里街513号',
+            'exporter_contact': '阿卜杜勒贾里勒',
+            'exporter_tel': '82-266-2402192',
+            'importer_name': '罗伯茨世界贸易有限公司',
+            'importer_name_en': 'Roberts World Traders Inc.',
+            'importer_address': '加拿大不列颠哥伦比亚维多利亚白桦新月街4号',
+            'importer_contact': '艾伦·博尔赫斯',
+            'importer_tel': '82-775-6178091'
+        }
+        
+        st.session_state.data_updated = True
+        st.session_state.last_update_time = datetime.now()
+        progress_bar.empty()
+        status_text.empty()
+        st.success("✅ PAD数据抓取完成！所有数据已更新")
+        st.balloons()
+
+# 显示最后更新时间
+if st.session_state.last_update_time:
+    st.markdown(f"""
+    <div class="status-box">
+        📅 最后数据更新时间: {st.session_state.last_update_time.strftime('%Y-%m-%d %H:%M:%S')}
+    </div>
+    """, unsafe_allow_html=True)
 
 # ==================== 第一步：客户信息 ====================
 st.markdown("""
@@ -258,25 +281,31 @@ col_cust1, col_cust2 = st.columns(2)
 
 with col_cust1:
     st.markdown("##### 出口商信息")
-    if st.button("📥 从客户信息表抓取", key="fetch_customer"):
-        df = read_excel_sheet(excel_path, "客户信息表")
-        if df is not None:
-            st.success("✅ 客户信息抓取成功!")
-            # 这里可以根据实际Excel格式填充数据
-        else:
-            st.error("无法读取客户信息表")
-    
-    exporter_name = st.text_input("公司全称", "平尼克国际贸易公司")
-    exporter_name_short = st.text_input("公司简称", "平尼克国际")
-    exporter_name_en = st.text_input("公司英文名", "Pinic International Trading")
-    exporter_address = st.text_input("公司地址", "菲律宾马尼拉宾农多马德里街513号")
+    exporter_name = st.text_input("公司全称", 
+        value=st.session_state.customer_data.get('exporter_name', '平尼克国际贸易公司'))
+    exporter_name_short = st.text_input("公司简称", 
+        value=st.session_state.customer_data.get('exporter_name_short', '平尼克国际'))
+    exporter_name_en = st.text_input("公司英文名", 
+        value=st.session_state.customer_data.get('exporter_name_en', 'Pinic International Trading'))
+    exporter_address = st.text_input("公司地址", 
+        value=st.session_state.customer_data.get('exporter_address', '菲律宾马尼拉宾农多马德里街513号'))
+    exporter_contact = st.text_input("企业法人", 
+        value=st.session_state.customer_data.get('exporter_contact', '阿卜杜勒贾里勒'))
+    exporter_tel = st.text_input("电话/传真", 
+        value=st.session_state.customer_data.get('exporter_tel', '82-266-2402192'))
 
 with col_cust2:
     st.markdown("##### 进口商信息")
-    importer_name = st.text_input("进口商名称", "罗伯茨世界贸易有限公司")
-    importer_name_en = st.text_input("进口商英文名", "Roberts World Traders Inc.")
-    importer_address = st.text_input("进口商地址", "加拿大不列颠哥伦比亚维多利亚白桦新月街4号")
-    importer_contact = st.text_input("进口商联系人", "艾伦·博尔赫斯")
+    importer_name = st.text_input("进口商名称", 
+        value=st.session_state.customer_data.get('importer_name', '罗伯茨世界贸易有限公司'))
+    importer_name_en = st.text_input("进口商英文名", 
+        value=st.session_state.customer_data.get('importer_name_en', 'Roberts World Traders Inc.'))
+    importer_address = st.text_input("进口商地址", 
+        value=st.session_state.customer_data.get('importer_address', '加拿大不列颠哥伦比亚维多利亚白桦新月街4号'))
+    importer_contact = st.text_input("进口商联系人", 
+        value=st.session_state.customer_data.get('importer_contact', '艾伦·博尔赫斯'))
+    importer_tel = st.text_input("进口商电话", 
+        value=st.session_state.customer_data.get('importer_tel', '82-775-6178091'))
 
 # ==================== 第二步：产品信息 ====================
 st.markdown("""
@@ -288,41 +317,31 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 商品搜索框
-st.markdown('<div class="search-box">', unsafe_allow_html=True)
-col_search1, col_search2 = st.columns([3, 1])
-with col_search1:
-    search_term = st.text_input("请输入商品编号或英文名称进行搜索", placeholder="例如: P010 或 Vending machine")
-with col_search2:
-    if st.button("🔍 搜索商品", use_container_width=True):
-        if file_exists and search_term:
-            df_product = read_excel_sheet(excel_path, "商品信息表")
-            product_info = find_product_by_code_or_name(df_product, search_term)
-            if product_info:
-                st.session_state.product_data = product_info
-                st.success(f"✅ 找到商品: {product_info.get('E', '未知')}")
-            else:
-                st.error("未找到匹配的商品")
-st.markdown('</div>', unsafe_allow_html=True)
-
 col_prod1, col_prod2 = st.columns(2)
 
 with col_prod1:
-    # 从session state获取数据，如果没有则用默认值
-    product_code = st.text_input("商品编号", value=st.session_state.product_data.get('D', 'P010'))
-    product_name = st.text_input("商品名称", value=st.session_state.product_data.get('E', '自动售货机'))
-    product_name_en = st.text_input("英文名称", value=st.session_state.product_data.get('F', 'Vending machine'))
-    product_type = st.text_input("货物类型", value=st.session_state.product_data.get('G', '机器、机械器具、电气设备及其零件'))
+    product_code = st.text_input("商品编号", 
+        value=st.session_state.product_data.get('product_code', 'P010'))
+    product_name = st.text_input("商品名称", 
+        value=st.session_state.product_data.get('product_name', '自动售货机'))
+    product_name_en = st.text_input("英文名称", 
+        value=st.session_state.product_data.get('product_name_en', 'Vending machine'))
+    product_type = st.text_input("货物类型", 
+        value=st.session_state.product_data.get('product_type', '机器、机械器具、电气设备及其零件'))
 
 with col_prod2:
-    sales_unit = st.text_input("销售单位", value=st.session_state.product_data.get('K', '台(SET)'))
-    package_unit = st.text_input("包装单位", value=st.session_state.product_data.get('M', '托盘(PALLET)'))
-    unit_conversion = st.text_input("单位换算", value=st.session_state.product_data.get('L', '1 SET/PALLET'))
-    
-    # 毛重、净重、体积需要从后面的列获取
-    gross_weight = st.text_input("毛重", value=st.session_state.product_data.get('N', '280.00KGS/托盘'))
-    net_weight = st.text_input("净重", value=st.session_state.product_data.get('O', '220.00KGS/托盘'))
-    volume = st.text_input("体积", value=st.session_state.product_data.get('P', '2.55CBM/托盘'))
+    sales_unit = st.text_input("销售单位", 
+        value=st.session_state.product_data.get('sales_unit', '台(SET)'))
+    package_unit = st.text_input("包装单位", 
+        value=st.session_state.product_data.get('package_unit', '托盘(PALLET)'))
+    unit_conversion = st.text_input("单位换算", 
+        value=st.session_state.product_data.get('unit_conversion', '1 SET/PALLET'))
+    gross_weight = st.text_input("毛重", 
+        value=st.session_state.product_data.get('gross_weight', '280.00KGS/托盘'))
+    net_weight = st.text_input("净重", 
+        value=st.session_state.product_data.get('net_weight', '220.00KGS/托盘'))
+    volume = st.text_input("体积", 
+        value=st.session_state.product_data.get('volume', '2.55CBM/托盘'))
 
 # ==================== 第三步：HS信息 ====================
 st.markdown("""
@@ -337,26 +356,22 @@ st.markdown("""
 col_hs1, col_hs2 = st.columns(2)
 
 with col_hs1:
-    hs_search = st.text_input("请输入HS编码", value=st.session_state.product_data.get('Q', '8476810000'))
-    if st.button("📥 从HS表抓取", key="fetch_hs"):
-        if file_exists:
-            df_hs = read_excel_sheet(excel_path, "HS表")
-            hs_info = find_hs_by_code(df_hs, hs_search)
-            if hs_info:
-                st.session_state.hs_data = hs_info
-                st.success("✅ HS信息抓取成功!")
-            else:
-                st.error("未找到匹配的HS编码")
-    
-    hs_code = st.text_input("HS编码", value=hs_search)
-    customs_condition = st.text_input("海关监管条件", value=st.session_state.hs_data.get('F', '无'))
-    inspection_type = st.text_input("检验检疫类别", value=st.session_state.hs_data.get('G', '无'))
+    hs_code = st.text_input("HS编码", 
+        value=st.session_state.hs_data.get('hs_code', '8476810000'))
+    customs_condition = st.text_input("海关监管条件", 
+        value=st.session_state.hs_data.get('customs_condition', '无'))
+    inspection_type = st.text_input("检验检疫类别", 
+        value=st.session_state.hs_data.get('inspection_type', '无'))
 
 with col_hs2:
-    legal_unit = st.text_input("法定单位", value=st.session_state.product_data.get('R', '台(SET)'))
-    pref_tax_rate = st.number_input("优惠税率(%)", value=float(st.session_state.hs_data.get('H', 50)))
-    vat_rate = st.number_input("增值税率(%)", value=float(st.session_state.hs_data.get('I', 13)))
-    export_rebate_rate = st.number_input("出口退税率(%)", value=float(st.session_state.hs_data.get('N', 13)))
+    legal_unit = st.text_input("法定单位", 
+        value=st.session_state.hs_data.get('legal_unit', '台(SET)'))
+    pref_tax_rate = st.number_input("优惠税率(%)", 
+        value=float(st.session_state.hs_data.get('pref_tax_rate', 50)))
+    vat_rate = st.number_input("增值税率(%)", 
+        value=float(st.session_state.hs_data.get('vat_rate', 13)))
+    export_rebate_rate = st.number_input("出口退税率(%)", 
+        value=float(st.session_state.hs_data.get('export_rebate_rate', 13)))
 
 # ==================== 第四步：物流信息 ====================
 st.markdown("""
@@ -371,33 +386,36 @@ st.markdown("""
 col_log1, col_log2 = st.columns(2)
 
 with col_log1:
-    if st.button("📥 从运费单价表抓取", key="fetch_freight"):
-        if file_exists:
-            df_freight = read_excel_sheet(excel_path, "运费单价")
-            if df_freight is not None:
-                st.success("✅ 物流信息抓取成功!")
-                # 这里可以根据实际Excel格式填充数据
-    
     st.markdown("**普柜单价 (USD)**")
     col_p1, col_p2 = st.columns(2)
     with col_p1:
-        lcl_w_normal = st.number_input("LCL(W)", value=73)
-        container_20_normal = st.number_input("20'GP", value=1452)
-        container_40_normal = st.number_input("40'GP", value=2613)
+        lcl_w_normal = st.number_input("LCL(W)", 
+            value=st.session_state.freight_data.get('lcl_w_normal', 73))
+        container_20_normal = st.number_input("20'GP", 
+            value=st.session_state.freight_data.get('container_20_normal', 1452))
+        container_40_normal = st.number_input("40'GP", 
+            value=st.session_state.freight_data.get('container_40_normal', 2613))
     with col_p2:
-        lcl_m_normal = st.number_input("LCL(M)", value=88)
-        container_40hc_normal = st.number_input("40'HC", value=3135)
+        lcl_m_normal = st.number_input("LCL(M)", 
+            value=st.session_state.freight_data.get('lcl_m_normal', 88))
+        container_40hc_normal = st.number_input("40'HC", 
+            value=st.session_state.freight_data.get('container_40hc_normal', 3135))
 
 with col_log2:
     st.markdown("**冻柜单价 (USD)**")
     col_f1, col_f2 = st.columns(2)
     with col_f1:
-        lcl_w_frozen = st.number_input("LCL(W)冻", value=146)
-        container_20_frozen = st.number_input("20'RF", value=2903)
-        container_40_frozen = st.number_input("40'RF", value=5225)
+        lcl_w_frozen = st.number_input("LCL(W)冻", 
+            value=st.session_state.freight_data.get('lcl_w_frozen', 146))
+        container_20_frozen = st.number_input("20'RF", 
+            value=st.session_state.freight_data.get('container_20_frozen', 2903))
+        container_40_frozen = st.number_input("40'RF", 
+            value=st.session_state.freight_data.get('container_40_frozen', 5225))
     with col_f2:
-        lcl_m_frozen = st.number_input("LCL(M)冻", value=189)
-        container_40rh_frozen = st.number_input("40'RH", value=6270)
+        lcl_m_frozen = st.number_input("LCL(M)冻", 
+            value=st.session_state.freight_data.get('lcl_m_frozen', 189))
+        container_40rh_frozen = st.number_input("40'RH", 
+            value=st.session_state.freight_data.get('container_40rh_frozen', 6270))
 
 # ==================== 第五步：交易信息 ====================
 st.markdown("""
@@ -412,13 +430,6 @@ st.markdown("""
 col_trade1, col_trade2, col_trade3 = st.columns(3)
 
 with col_trade1:
-    if st.button("📥 从汇率表抓取", key="fetch_rate"):
-        if file_exists:
-            df_rate = read_excel_sheet(excel_path, "汇率表")
-            if df_rate is not None:
-                st.success("✅ 汇率信息抓取成功!")
-                # 这里可以根据实际Excel格式填充数据
-    
     quantity = st.number_input("交易数量", value=182, step=1)
     purchase_price = st.number_input("采购单价", value=4778.0, step=100.0)
 
@@ -504,6 +515,7 @@ with col_calc1:
         st.session_state.container_options = container_options
         
         if container_options:
+            # 找出单位运费最低的方案
             best_option = min(container_options, key=lambda x: float(x["单位运费"].replace("$/台", "").replace("$", "").replace(",", "")))
             st.session_state.best_freight = float(best_option["总运费"].replace("$", "").replace(",", ""))
             st.session_state.best_container = best_option
@@ -665,6 +677,27 @@ if insurance > 0:
     </div>
     """, unsafe_allow_html=True)
 
+# 国内费用合计
+st.markdown(f"""
+<div class="excel-row" style="background-color: #e9ecef;">
+    <div class="excel-label"></div>
+    <div class="excel-sub"><strong>国内费用合计</strong></div>
+    <div class="excel-amount"><strong>¥{domestic_total:,.2f}</strong></div>
+    <div class="excel-principle">各项国内费用相加</div>
+</div>
+""", unsafe_allow_html=True)
+
+# 4. 银行费用
+if payment in ["D/P", "D/A"] or "L/C" in payment:
+    st.markdown(f"""
+    <div class="excel-row">
+        <div class="excel-label">4.银行费用</div>
+        <div class="excel-sub">{'托收费用' if payment in ['D/P','D/A'] else '信用证费用'}</div>
+        <div class="excel-amount">${bank_fee:,.2f}</div>
+        <div class="excel-principle">根据支付方式计算</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 # 6. 总成本
 st.markdown(f"""
 <div class="excel-row" style="background-color: #2a5298; color: white; font-weight: bold;">
@@ -687,7 +720,7 @@ with col_rev1:
                                 value=round(st.session_state.suggested_price if st.session_state.suggested_price > 0 else 100, 2), 
                                 step=10.0)
 
-if test_price > 0:
+if test_price > 0 and st.session_state.best_freight > 0:
     total_cost_with_freight = total_cost_before_freight + (st.session_state.best_freight * exchange_rate)
     revenue = test_price * quantity * exchange_rate
     profit = revenue - total_cost_with_freight
@@ -705,12 +738,5 @@ if test_price > 0:
 st.markdown("---")
 st.markdown(f"""
 <div style='text-align: center; color: #666; padding: 10px; background-color: #f8f9fa; border-radius: 5px;'>
-    <div>数据来源: {excel_path} | 文件存在: {'是' if file_exists else '否'}</div>
-    <div>更新时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
-</div>
-""", unsafe_allow_html=True)
-
-# 保存按钮
-if st.button("💾 保存当前数据", use_container_width=True):
-    st.success("✅ 数据已保存！")
-    st.balloons()
+    <div>运行模式: Streamlit Cloud | PAD模拟抓取已就绪</div>
+    <div>更新时间: {datetime.now().strftime('%Y-%m-%d %H:%
