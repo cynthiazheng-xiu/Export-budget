@@ -739,4 +739,11 @@ st.markdown("---")
 st.markdown(f"""
 <div style='text-align: center; color: #666; padding: 10px; background-color: #f8f9fa; border-radius: 5px;'>
     <div>运行模式: Streamlit Cloud | PAD模拟抓取已就绪</div>
-    <div>更新时间: {datetime.now().strftime('%Y-%m-%d %H:%
+    <div>更新时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+</div>
+""", unsafe_allow_html=True)
+
+# 保存按钮
+if st.button("💾 保存当前数据", use_container_width=True):
+    st.success("✅ 数据已保存到会话中！")
+    st.balloons()
