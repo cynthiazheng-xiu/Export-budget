@@ -31,52 +31,36 @@ st.markdown("""
         border-radius: 10px;
         margin-bottom: 15px;
     }
-    .company-section {
-        background-color: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        border: 2px solid #2a5298;
-    }
-    .company-container {
+    .exporter-header {
+        background-color: #f0f8ff;
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border: 1px solid #2a5298;
+        font-size: 0.9rem;
         display: flex;
+        flex-wrap: wrap;
         gap: 20px;
     }
-    .company-left, .company-right {
-        flex: 1;
-        padding: 15px;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .company-left {
-        border-right: 2px solid #dee2e6;
-    }
-    .company-right {
-        border-left: 2px solid #dee2e6;
-    }
-    .company-title {
-        font-size: 1.2rem;
-        color: #2a5298;
-        font-weight: bold;
-        margin-bottom: 15px;
-        padding-bottom: 8px;
-        border-bottom: 2px solid #2a5298;
-    }
-    .company-row {
+    .exporter-item {
         display: flex;
-        margin-bottom: 8px;
-        padding: 4px 0;
+        align-items: center;
     }
-    .company-label {
+    .exporter-label {
         font-weight: bold;
         color: #1e3c72;
-        width: 100px;
-        min-width: 100px;
+        margin-right: 5px;
     }
-    .company-value {
+    .exporter-value {
         color: #2a5298;
-        flex: 1;
+    }
+    .section-title {
+        font-size: 1.3rem;
+        color: #2a5298;
+        font-weight: bold;
+        margin: 15px 0 10px 0;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #2a5298;
     }
     .step-container {
         background-color: #f8f9fa;
@@ -114,17 +98,17 @@ st.markdown("""
         border-radius: 8px;
         margin: 15px 0;
         flex-wrap: wrap;
+        border: 1px solid #2a5298;
     }
     .hs-item {
         flex: 1;
         min-width: 120px;
     }
-    .status-box {
-        background-color: #d4edda;
-        padding: 8px 12px;
-        border-radius: 5px;
-        margin: 10px 0;
-        font-size: 0.9rem;
+    .hs-header {
+        font-weight: bold;
+        color: #2a5298;
+        margin-bottom: 5px;
+        font-size: 0.8rem;
     }
     .empty-state {
         color: #999;
@@ -168,53 +152,16 @@ st.markdown("""
         border-radius: 8px;
         text-align: center;
     }
-    .freight-container {
-        display: flex;
-        gap: 20px;
-        margin: 10px 0;
-    }
-    .freight-table {
-        flex: 1;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-        overflow: hidden;
-    }
-    .freight-table table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    .freight-table th {
-        background-color: #2a5298;
-        color: white;
-        padding: 8px;
-        text-align: center;
-        font-size: 0.9rem;
-    }
-    .freight-table td {
-        padding: 8px;
-        border: 1px solid #dee2e6;
-        text-align: center;
-    }
-    .freight-table input {
-        width: 100px;
-        text-align: center;
-        border: 1px solid #ced4da;
-        border-radius: 3px;
-        padding: 4px;
-    }
-    .freight-label {
-        font-weight: bold;
-        background-color: #e9ecef;
-    }
     .success-small {
         font-size: 0.8rem;
         color: #28a745;
         margin-top: 5px;
     }
-    .progress-text {
-        font-size: 0.9rem;
-        color: #666;
-        margin: 5px 0;
+    .freight-section {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -229,6 +176,10 @@ if 'last_update_time' not in st.session_state:
     st.session_state.last_update_time = None
 if 'best_freight' not in st.session_state:
     st.session_state.best_freight = 0.0
+if 'containers_needed' not in st.session_state:
+    st.session_state.containers_needed = 0
+if 'container_type' not in st.session_state:
+    st.session_state.container_type = ""
 if 'suggested_price' not in st.session_state:
     st.session_state.suggested_price = 0.0
 if 'calculated' not in st.session_state:
@@ -282,6 +233,8 @@ def clear_all_data():
     st.session_state.data_updated = False
     st.session_state.last_update_time = None
     st.session_state.best_freight = 0.0
+    st.session_state.containers_needed = 0
+    st.session_state.container_type = ""
     st.session_state.suggested_price = 0.0
     st.session_state.calculated = False
     st.session_state.product_data = None
@@ -299,7 +252,6 @@ with st.sidebar:
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1:
         if st.button("🚀 抓取数据", use_container_width=True):
-            # 创建进度条和状态显示
             progress_bar = st.progress(0)
             status_text = st.empty()
             
@@ -319,7 +271,6 @@ with st.sidebar:
                 progress_bar.progress((i + 1) * 100 // len(steps))
                 time.sleep(0.5)
             
-            # 抓取数据
             st.session_state.data_updated = True
             st.session_state.last_update_time = get_beijing_time()
             st.session_state.product_data = {
@@ -368,210 +319,130 @@ with st.sidebar:
     with col_port2:
         import_country = st.text_input("进口国", "Canada", key="import_country")
         destination_port = st.text_input("目的港", "Vancouver", key="destination_port")
-
-# ==================== 公司信息（左右并列，明显分割）====================
-st.markdown("""
-<div class="step-container">
-    <div class="step-header">
-        <span class="step-badge">公司信息</span>
-        <span class="step-title">进出口商完整信息</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown('<div class="company-section">', unsafe_allow_html=True)
-st.markdown('<div class="company-container">', unsafe_allow_html=True)
-
-# 左侧：出口商信息
-st.markdown('<div class="company-left">', unsafe_allow_html=True)
-st.markdown('<div class="company-title">🏭 出口商信息</div>', unsafe_allow_html=True)
-
-# 出口商信息行
-st.markdown(f"""
-<div class="company-row">
-    <div class="company-label">公司全称：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_name"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">公司简称：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_name_short"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">英文名称：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_name_en"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">公司地址：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_address"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">地址英文：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_address_en"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">企业法人：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_contact"]} ({st.session_state.customer_data["exporter_contact_en"]})</div>
-</div>
-<div class="company-row">
-    <div class="company-label">电话/传真：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_tel"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">电子邮件：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_email"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">邮政编码：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_postal"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">组织机构代码：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_org_code"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">社会信用代码：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_social_code"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">海关代码：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_customs_code"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">报检登记号：</div>
-    <div class="company-value">{st.session_state.customer_data["exporter_inspection_code"]}</div>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# 右侧：进口商信息
-st.markdown('<div class="company-right">', unsafe_allow_html=True)
-st.markdown('<div class="company-title">🌍 进口商信息</div>', unsafe_allow_html=True)
-
-# 进口商信息行
-st.markdown(f"""
-<div class="company-row">
-    <div class="company-label">公司名称：</div>
-    <div class="company-value">{st.session_state.customer_data["importer_name"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">英文名称：</div>
-    <div class="company-value">{st.session_state.customer_data["importer_name_en"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">公司地址：</div>
-    <div class="company-value">{st.session_state.customer_data["importer_address"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">地址英文：</div>
-    <div class="company-value">{st.session_state.customer_data["importer_address_en"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">联系人：</div>
-    <div class="company-value">{st.session_state.customer_data["importer_contact"]} ({st.session_state.customer_data["importer_contact_en"]})</div>
-</div>
-<div class="company-row">
-    <div class="company-label">电话：</div>
-    <div class="company-value">{st.session_state.customer_data["importer_tel"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">邮箱：</div>
-    <div class="company-value">{st.session_state.customer_data["importer_email"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">邮政编码：</div>
-    <div class="company-value">{st.session_state.customer_data["importer_postal"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">组织机构代码：</div>
-    <div class="company-value">{st.session_state.customer_data["importer_org_code"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">报检登记号：</div>
-    <div class="company-value">{st.session_state.customer_data["importer_inspection_code"]}</div>
-</div>
-<div class="company-row">
-    <div class="company-label">海关代码：</div>
-    <div class="company-value">{st.session_state.customer_data["importer_customs_code"]}</div>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# ==================== HS信息（紧凑的一行）====================
-st.markdown('<div class="hs-row">', unsafe_allow_html=True)
-
-col_hs1, col_hs2, col_hs3, col_hs4, col_hs5, col_hs6, col_hs7, col_hs8 = st.columns(8)
-with col_hs1:
-    hs_code = st.text_input("HS编码", "8476810000", key="hs_code", label_visibility="collapsed", placeholder="HS编码")
-with col_hs2:
-    customs_condition = st.text_input("监管条件", "无", key="customs_condition", label_visibility="collapsed", placeholder="监管条件")
-with col_hs3:
-    inspection_type = st.text_input("检验检疫", "无", key="inspection_type", label_visibility="collapsed", placeholder="检验检疫")
-with col_hs4:
-    legal_unit = st.text_input("法定单位", "台(SET)", key="legal_unit", label_visibility="collapsed", placeholder="法定单位")
-with col_hs5:
-    pref_tax_rate = st.number_input("优惠税率%", value=50.0, key="pref_tax_rate", label_visibility="collapsed", placeholder="优惠税率%", step=1.0)
-with col_hs6:
-    vat_rate = st.number_input("增值税%", value=13.0, key="vat_rate", label_visibility="collapsed", placeholder="增值税%", step=1.0)
-with col_hs7:
-    export_tax_rate = st.number_input("出口税率%", value=0.0, key="export_tax_rate", label_visibility="collapsed", placeholder="出口税率%", step=1.0)
-with col_hs8:
-    export_rebate_rate = st.number_input("退税率%", value=13.0, key="export_rebate_rate", label_visibility="collapsed", placeholder="退税率%", step=1.0)
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# ==================== 物流信息（并列表格）====================
-st.markdown("""
-<div class="step-container">
-    <div class="step-header">
-        <span class="step-badge">物流信息</span>
-        <span class="step-title">运费单价表</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# 安全获取物流数据
-if st.session_state.freight_data:
-    freight_data = st.session_state.freight_data
-else:
-    freight_data = {
-        'lcl_w_normal': 73, 'lcl_m_normal': 88,
-        'c20_normal': 1452, 'c40_normal': 2613, 'c40hc_normal': 3135,
-        'lcl_w_frozen': 146, 'lcl_m_frozen': 189,
-        'c20_frozen': 2903, 'c40_frozen': 5225, 'c40rh_frozen': 6270
-    }
-
-# 并列表格显示
-col_freight1, col_freight2 = st.columns(2)
-
-with col_freight1:
-    st.markdown("### 普柜单价 (USD)")
     
-    col_p1, col_p2, col_p3 = st.columns(3)
+    st.markdown("---")
+    
+    # ==================== 物流信息（运费单价表）====================
+    st.markdown("## 📦 运费单价表")
+    
+    # 安全获取物流数据
+    if st.session_state.freight_data:
+        freight_data = st.session_state.freight_data
+    else:
+        freight_data = {
+            'lcl_w_normal': 73, 'lcl_m_normal': 88,
+            'c20_normal': 1452, 'c40_normal': 2613, 'c40hc_normal': 3135,
+            'lcl_w_frozen': 146, 'lcl_m_frozen': 189,
+            'c20_frozen': 2903, 'c40_frozen': 5225, 'c40rh_frozen': 6270
+        }
+    
+    st.markdown('<div class="freight-section">', unsafe_allow_html=True)
+    st.markdown("**普柜单价 (USD)**")
+    col_p1, col_p2 = st.columns(2)
     with col_p1:
         lcl_w_normal = st.number_input("LCL(W)", value=float(freight_data.get('lcl_w_normal', 73)), key="lcl_w_normal", step=1.0)
         container_20_normal = st.number_input("20'GP", value=float(freight_data.get('c20_normal', 1452)), key="c20_normal", step=1.0)
+        container_40_normal = st.number_input("40'GP", value=float(freight_data.get('c40_normal', 2613)), key="c40_normal", step=1.0)
     with col_p2:
         lcl_m_normal = st.number_input("LCL(M)", value=float(freight_data.get('lcl_m_normal', 88)), key="lcl_m_normal", step=1.0)
-        container_40_normal = st.number_input("40'GP", value=float(freight_data.get('c40_normal', 2613)), key="c40_normal", step=1.0)
-    with col_p3:
         container_40hc_normal = st.number_input("40'HC", value=float(freight_data.get('c40hc_normal', 3135)), key="c40hc_normal", step=1.0)
-
-with col_freight2:
-    st.markdown("### 冻柜单价 (USD)")
     
-    col_f1, col_f2, col_f3 = st.columns(3)
+    st.markdown("**冻柜单价 (USD)**")
+    col_f1, col_f2 = st.columns(2)
     with col_f1:
         lcl_w_frozen = st.number_input("LCL(W)冻", value=float(freight_data.get('lcl_w_frozen', 146)), key="lcl_w_frozen", step=1.0)
         container_20_frozen = st.number_input("20'RF", value=float(freight_data.get('c20_frozen', 2903)), key="c20_frozen", step=1.0)
+        container_40_frozen = st.number_input("40'RF", value=float(freight_data.get('c40_frozen', 5225)), key="c40_frozen", step=1.0)
     with col_f2:
         lcl_m_frozen = st.number_input("LCL(M)冻", value=float(freight_data.get('lcl_m_frozen', 189)), key="lcl_m_frozen", step=1.0)
-        container_40_frozen = st.number_input("40'RF", value=float(freight_data.get('c40_frozen', 5225)), key="c40_frozen", step=1.0)
-    with col_f3:
         container_40rh_frozen = st.number_input("40'RH", value=float(freight_data.get('c40rh_frozen', 6270)), key="c40rh_frozen", step=1.0)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ==================== 出口商信息（表头最上方）====================
+st.markdown('<div class="exporter-header">', unsafe_allow_html=True)
+st.markdown(f"""
+    <div class="exporter-item">
+        <span class="exporter-label">出口商：</span>
+        <span class="exporter-value">{st.session_state.customer_data["exporter_name"]} ({st.session_state.customer_data["exporter_name_en"]})</span>
+    </div>
+    <div class="exporter-item">
+        <span class="exporter-label">联系人：</span>
+        <span class="exporter-value">{st.session_state.customer_data["exporter_contact"]} | {st.session_state.customer_data["exporter_tel"]}</span>
+    </div>
+    <div class="exporter-item">
+        <span class="exporter-label">地址：</span>
+        <span class="exporter-value">{st.session_state.customer_data["exporter_address"]}</span>
+    </div>
+""", unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ==================== 进口商信息（3列）====================
+st.markdown('<div class="section-title">🌍 进口商信息</div>', unsafe_allow_html=True)
+
+col_imp1, col_imp2, col_imp3 = st.columns(3)
+
+with col_imp1:
+    st.markdown("**公司名称**")
+    st.info(st.session_state.customer_data["importer_name"])
+    st.markdown("**英文名称**")
+    st.info(st.session_state.customer_data["importer_name_en"])
+
+with col_imp2:
+    st.markdown("**联系人**")
+    st.info(f"{st.session_state.customer_data['importer_contact']} ({st.session_state.customer_data['importer_contact_en']})")
+    st.markdown("**电话/邮箱**")
+    st.info(f"{st.session_state.customer_data['importer_tel']} | {st.session_state.customer_data['importer_email']}")
+
+with col_imp3:
+    st.markdown("**公司地址**")
+    st.info(st.session_state.customer_data["importer_address"])
+    st.markdown("**地址英文**")
+    st.info(st.session_state.customer_data["importer_address_en"])
+
+# ==================== HS信息（带抬头）====================
+st.markdown('<div class="section-title">🏷️ HS编码信息</div>', unsafe_allow_html=True)
+
+st.markdown('<div class="hs-row">', unsafe_allow_html=True)
+
+# 第一行：抬头
+col_hs_header1, col_hs_header2, col_hs_header3, col_hs_header4, col_hs_header5, col_hs_header6, col_hs_header7, col_hs_header8 = st.columns(8)
+with col_hs_header1:
+    st.markdown('<div class="hs-header">HS编码</div>', unsafe_allow_html=True)
+with col_hs_header2:
+    st.markdown('<div class="hs-header">监管条件</div>', unsafe_allow_html=True)
+with col_hs_header3:
+    st.markdown('<div class="hs-header">检验检疫</div>', unsafe_allow_html=True)
+with col_hs_header4:
+    st.markdown('<div class="hs-header">法定单位</div>', unsafe_allow_html=True)
+with col_hs_header5:
+    st.markdown('<div class="hs-header">优惠税率%</div>', unsafe_allow_html=True)
+with col_hs_header6:
+    st.markdown('<div class="hs-header">增值税%</div>', unsafe_allow_html=True)
+with col_hs_header7:
+    st.markdown('<div class="hs-header">出口税率%</div>', unsafe_allow_html=True)
+with col_hs_header8:
+    st.markdown('<div class="hs-header">退税率%</div>', unsafe_allow_html=True)
+
+# 第二行：输入框
+col_hs1, col_hs2, col_hs3, col_hs4, col_hs5, col_hs6, col_hs7, col_hs8 = st.columns(8)
+with col_hs1:
+    hs_code = st.text_input("##", value="8476810000", key="hs_code", label_visibility="collapsed")
+with col_hs2:
+    customs_condition = st.text_input("##", value="无", key="customs_condition", label_visibility="collapsed")
+with col_hs3:
+    inspection_type = st.text_input("##", value="无", key="inspection_type", label_visibility="collapsed")
+with col_hs4:
+    legal_unit = st.text_input("##", value="台(SET)", key="legal_unit", label_visibility="collapsed")
+with col_hs5:
+    pref_tax_rate = st.number_input("##", value=50.0, key="pref_tax_rate", label_visibility="collapsed", step=1.0)
+with col_hs6:
+    vat_rate = st.number_input("##", value=13.0, key="vat_rate", label_visibility="collapsed", step=1.0)
+with col_hs7:
+    export_tax_rate = st.number_input("##", value=0.0, key="export_tax_rate", label_visibility="collapsed", step=1.0)
+with col_hs8:
+    export_rebate_rate = st.number_input("##", value=13.0, key="export_rebate_rate", label_visibility="collapsed", step=1.0)
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ==================== 产品信息 ====================
 st.markdown("""
@@ -640,7 +511,7 @@ with col_trade3:
     expected_profit_rate = st.slider("预期利润率%", 0, 50, 15, key="expected_profit_rate")
     transport_note = st.selectbox("运输要求", ["普通", "冷藏", "冷冻"], key="transport_note")
 
-# 更新session state中的交易信息（确保所有变量都已定义）
+# 更新session state中的交易信息
 st.session_state.quantity = float(quantity)
 st.session_state.purchase_price = float(purchase_price)
 st.session_state.trade_term = trade_term
@@ -700,10 +571,13 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
             containers_needed = np.ceil(total_volume / 33.0)
             if transport_note in ["冷藏", "冷冻"]:
                 st.session_state.best_freight = float(containers_needed * container_20_frozen)
+                st.session_state.container_type = "20'冻柜"
             else:
                 st.session_state.best_freight = float(containers_needed * container_20_normal)
+                st.session_state.container_type = "20'普柜"
+            st.session_state.containers_needed = int(containers_needed)
             st.session_state.calculated = True
-            st.success(f"需要 {int(containers_needed)}个集装箱，运费 ${st.session_state.best_freight:,.2f}")
+            st.success(f"需要 {int(containers_needed)}个 {st.session_state.container_type}，运费 ${st.session_state.best_freight:,.2f}")
 
     with col_calc2:
         if st.button("💰 计算报价", use_container_width=True):
@@ -820,7 +694,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
         <div class="excel-label"></div>
         <div class="excel-sub">国际运费</div>
         <div class="excel-amount">${st.session_state.best_freight:,.2f}</div>
-        <div class="excel-principle">集装箱运费</div>
+        <div class="excel-principle">{st.session_state.containers_needed}个{st.session_state.container_type}</div>
     </div>
     """, unsafe_allow_html=True)
 
