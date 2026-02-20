@@ -352,7 +352,7 @@ with st.sidebar:
         import_country = st.text_input("进口国", "Canada", key="import_country")
         destination_port = st.text_input("目的港", "Vancouver", key="destination_port")
 
-# ==================== 公司信息（完整显示）====================
+# ==================== 公司信息（完整显示，使用安全获取）====================
 st.markdown("""
 <div class="step-container">
     <div class="step-header">
@@ -364,20 +364,24 @@ st.markdown("""
 
 st.markdown('<div class="company-header">', unsafe_allow_html=True)
 
+# 安全获取字典值的函数
+def get_customer_value(key, default=''):
+    return st.session_state.customer_data.get(key, default)
+
 # 第一行：公司名称
 st.markdown(f"""
 <div class="company-row">
     <div class="company-item">
         <span class="company-label">出口商:</span>
-        <span class="company-value">{st.session_state.customer_data['exporter_name']} ({st.session_state.customer_data['exporter_name_en']})</span>
+        <span class="company-value">{get_customer_value('exporter_name')} ({get_customer_value('exporter_name_en')})</span>
     </div>
     <div class="company-item">
         <span class="company-label">公司简称:</span>
-        <span class="company-value">{st.session_state.customer_data['exporter_name_short']}</span>
+        <span class="company-value">{get_customer_value('exporter_name_short')}</span>
     </div>
     <div class="company-item">
         <span class="company-label">进口商:</span>
-        <span class="company-value">{st.session_state.customer_data['importer_name']} ({st.session_state.customer_data['importer_name_en']})</span>
+        <span class="company-value">{get_customer_value('importer_name')} ({get_customer_value('importer_name_en')})</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -387,11 +391,11 @@ st.markdown(f"""
 <div class="company-row">
     <div class="company-item">
         <span class="company-label">出口地址:</span>
-        <span class="company-value">{st.session_state.customer_data['exporter_address']}</span>
+        <span class="company-value">{get_customer_value('exporter_address')}</span>
     </div>
     <div class="company-item">
         <span class="company-label">进口地址:</span>
-        <span class="company-value">{st.session_state.customer_data['importer_address']}</span>
+        <span class="company-value">{get_customer_value('importer_address')}</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -401,13 +405,13 @@ st.markdown(f"""
 <div class="company-row">
     <div class="company-item">
         <span class="company-label">出口联系人:</span>
-        <span class="company-value">{st.session_state.customer_data['exporter_contact']} ({st.session_state.customer_data['exporter_contact_en']}) | 电话: {st.session_state.customer_data['exporter_tel']} | 邮箱: {st.session_state.customer_data['exporter_email']}</span>
+        <span class="company-value">{get_customer_value('exporter_contact')} ({get_customer_value('exporter_contact_en')}) | 电话: {get_customer_value('exporter_tel')} | 邮箱: {get_customer_value('exporter_email')}</span>
     </div>
 </div>
 <div class="company-row">
     <div class="company-item">
         <span class="company-label">进口联系人:</span>
-        <span class="company-value">{st.session_state.customer_data['importer_contact']} ({st.session_state.customer_data['importer_contact_en']}) | 电话: {st.session_state.customer_data['importer_tel']} | 邮箱: {st.session_state.customer_data['importer_email']}</span>
+        <span class="company-value">{get_customer_value('importer_contact')} ({get_customer_value('importer_contact_en')}) | 电话: {get_customer_value('importer_tel')} | 邮箱: {get_customer_value('importer_email')}</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -417,43 +421,43 @@ st.markdown(f"""
 <div class="company-row">
     <div class="company-item">
         <span class="company-label">出口邮编:</span>
-        <span class="company-value">{st.session_state.customer_data['exporter_postal']}</span>
+        <span class="company-value">{get_customer_value('exporter_postal')}</span>
     </div>
     <div class="company-item">
         <span class="company-label">出口组织代码:</span>
-        <span class="company-value">{st.session_state.customer_data['exporter_org_code']}</span>
+        <span class="company-value">{get_customer_value('exporter_org_code')}</span>
     </div>
     <div class="company-item">
         <span class="company-label">出口信用代码:</span>
-        <span class="company-value">{st.session_state.customer_data['exporter_social_code']}</span>
+        <span class="company-value">{get_customer_value('exporter_social_code')}</span>
     </div>
 </div>
 <div class="company-row">
     <div class="company-item">
         <span class="company-label">出口海关代码:</span>
-        <span class="company-value">{st.session_state.customer_data['exporter_customs_code']}</span>
+        <span class="company-value">{get_customer_value('exporter_customs_code')}</span>
     </div>
     <div class="company-item">
         <span class="company-label">出口报检号:</span>
-        <span class="company-value">{st.session_state.customer_data['exporter_inspection_code']}</span>
+        <span class="company-value">{get_customer_value('exporter_inspection_code')}</span>
     </div>
 </div>
 <div class="company-row">
     <div class="company-item">
         <span class="company-label">进口邮编:</span>
-        <span class="company-value">{st.session_state.customer_data['importer_postal']}</span>
+        <span class="company-value">{get_customer_value('importer_postal')}</span>
     </div>
     <div class="company-item">
         <span class="company-label">进口组织代码:</span>
-        <span class="company-value">{st.session_state.customer_data['importer_org_code']}</span>
+        <span class="company-value">{get_customer_value('importer_org_code')}</span>
     </div>
     <div class="company-item">
         <span class="company-label">进口报检号:</span>
-        <span class="company-value">{st.session_state.customer_data['importer_inspection_code']}</span>
+        <span class="company-value">{get_customer_value('importer_inspection_code')}</span>
     </div>
     <div class="company-item">
         <span class="company-label">进口海关代码:</span>
-        <span class="company-value">{st.session_state.customer_data['importer_customs_code']}</span>
+        <span class="company-value">{get_customer_value('importer_customs_code')}</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -587,7 +591,7 @@ with col_trade1:
 
 with col_trade2:
     account_balance = st.number_input("账户余额", value=1888000.0, step=1000.0, key="account_balance")
-    exchange_rate = st.number_input("CNY/USD汇率", value=st.session_state.exchange_rate, step=0.001, format="%.3f", key="exchange_rate")
+    exchange_rate = st.number_input("USD/CAD汇率", value=st.session_state.exchange_rate, step=0.001, format="%.3f", key="exchange_rate")
 
 with col_trade3:
     trade_term = st.selectbox("贸易术语", ["EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CIP", "DAP", "DPU", "DDP"], 
