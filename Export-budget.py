@@ -1,9 +1,21 @@
+import subprocess
+import sys
+
+# 安装需要的包
+packages = ['plotly', 'pandas', 'numpy']
+for package in packages:
+    try:
+        __import__(package)
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
 import plotly.express as px
 import re
+import plotly.graph_objects as go
 
 # 页面配置
 st.set_page_config(
