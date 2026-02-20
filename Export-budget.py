@@ -12,108 +12,8 @@ st.set_page_config(
     layout="wide"
 )
 
-# 自定义样式
-st.markdown("""
-<style>
-    .main-title {
-        font-size: 2.2rem;
-        color: white;
-        text-align: center;
-        padding: 20px;
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-        border-radius: 15px;
-        margin-bottom: 25px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .step-container {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 20px;
-        border-left: 5px solid #2a5298;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .step-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-        background-color: #e9ecef;
-        padding: 10px 15px;
-        border-radius: 8px;
-    }
-    .step-badge {
-        background-color: #2a5298;
-        color: white;
-        padding: 8px 20px;
-        border-radius: 25px;
-        font-size: 1rem;
-        font-weight: bold;
-        margin-right: 20px;
-        min-width: 120px;
-        text-align: center;
-    }
-    .step-title {
-        font-size: 1.3rem;
-        color: #1e3c72;
-        font-weight: 600;
-    }
-    .status-box {
-        background-color: #d4edda;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 15px 0;
-        border: 1px solid #c3e6cb;
-    }
-    .excel-table {
-        background-color: white;
-        border: 2px solid #dee2e6;
-        border-radius: 8px;
-        padding: 0;
-        margin: 15px 0;
-        overflow: hidden;
-    }
-    .excel-header {
-        background-color: #2a5298;
-        color: white;
-        font-weight: bold;
-        padding: 12px;
-        display: grid;
-        grid-template-columns: 150px 200px 200px 1fr;
-    }
-    .excel-row {
-        display: grid;
-        grid-template-columns: 150px 200px 200px 1fr;
-        border-bottom: 1px solid #dee2e6;
-        padding: 10px;
-    }
-    .excel-row:nth-child(even) {
-        background-color: #f8f9fa;
-    }
-    .result-box {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
-        margin: 10px 0;
-    }
-    .stButton>button {
-        background-color: #2a5298;
-        color: white;
-        font-weight: bold;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    .stButton>button:hover {
-        background-color: #1e3c72;
-    }
-</style>
-""", unsafe_allow_html=True)
-
 # 标题
-st.markdown('<div class="main-title">📊 出口预算表 - 全国职业院校技能大赛版</div>', unsafe_allow_html=True)
+st.title("📊 出口预算表 - 全国职业院校技能大赛版")
 
 # ==================== 初始化session state ====================
 if 'product_data' not in st.session_state:
@@ -124,303 +24,114 @@ if 'freight_data' not in st.session_state:
     st.session_state.freight_data = {}
 if 'customer_data' not in st.session_state:
     st.session_state.customer_data = {}
-if 'data_updated' not in st.session_state:
-    st.session_state.data_updated = False
-if 'last_update_time' not in st.session_state:
-    st.session_state.last_update_time = None
 if 'best_freight' not in st.session_state:
     st.session_state.best_freight = 0
-if 'best_container' not in st.session_state:
-    st.session_state.best_container = None
-if 'container_options' not in st.session_state:
-    st.session_state.container_options = []
 if 'suggested_price' not in st.session_state:
     st.session_state.suggested_price = 0
-if 'calculated' not in st.session_state:
-    st.session_state.calculated = False
 
 # ==================== PAD模拟抓取按钮 ====================
-st.markdown("""
-<div class="step-container">
-    <div class="step-header">
-        <span class="step-badge">PAD抓取</span>
-        <span class="step-title">Power Automate Desktop 模拟数据抓取</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown("### 🚀 PAD数据抓取")
 
-col_pad1, col_pad2, col_pad3 = st.columns([1,2,1])
-with col_pad2:
-    if st.button("🚀 启动PAD模拟抓取数据", use_container_width=True):
-        st.session_state.pad_running = True
-        st.session_state.data_updated = False
-        
-        # 创建进度条模拟PAD运行
+col1, col2, col3 = st.columns([1,2,1])
+with col2:
+    if st.button("启动PAD模拟抓取数据", use_container_width=True):
         progress_bar = st.progress(0)
         status_text = st.empty()
         
-        # 模拟PAD抓取过程
-        steps = [
-            "正在启动Power Automate Desktop...",
-            "正在打开Excel文件 C:\\Basic Information\\Data.xlsx...",
-            "正在读取商品信息表...",
-            "正在读取HS编码表...",
-            "正在读取运费单价表...",
-            "正在读取汇率表...",
-            "正在读取客户信息表...",
-            "正在整理数据...",
-            "正在准备填入Web界面...",
-            "数据抓取完成！"
-        ]
-        
+        steps = ["正在启动...", "读取商品信息...", "读取HS信息...", "读取运费信息...", "完成!"]
         for i, step in enumerate(steps):
-            status_text.text(f"⏳ {step}")
-            progress_bar.progress((i + 1) * 10)
-            time.sleep(0.3)  # 模拟处理时间
+            status_text.text(step)
+            progress_bar.progress((i + 1) * 20)
+            time.sleep(0.5)
         
-        # 模拟抓取到的数据（示例数据）
+        # 模拟数据
         st.session_state.product_data = {
             'product_code': 'P010',
             'product_name': '自动售货机',
             'product_name_en': 'Vending machine',
-            'product_type': '机器、机械器具、电气设备及其零件',
-            'sales_unit': '台(SET)',
-            'package_unit': '托盘(PALLET)',
-            'unit_conversion': '1 SET/PALLET',
             'gross_weight': '280.00KGS/托盘',
             'net_weight': '220.00KGS/托盘',
-            'volume': '2.55CBM/托盘'
+            'volume': '2.55CBM/托盘',
+            'unit_conversion': '1 SET/PALLET'
         }
         
         st.session_state.hs_data = {
             'hs_code': '8476810000',
-            'customs_condition': '无',
-            'inspection_type': '无',
-            'legal_unit': '台(SET)',
-            'pref_tax_rate': 50,
             'vat_rate': 13,
             'export_rebate_rate': 13
         }
         
-        st.session_state.freight_data = {
-            'lcl_w_normal': 73,
-            'lcl_m_normal': 88,
-            'container_20_normal': 1452,
-            'container_40_normal': 2613,
-            'container_40hc_normal': 3135,
-            'lcl_w_frozen': 146,
-            'lcl_m_frozen': 189,
-            'container_20_frozen': 2903,
-            'container_40_frozen': 5225,
-            'container_40rh_frozen': 6270
-        }
-        
-        st.session_state.customer_data = {
-            'exporter_name': '平尼克国际贸易公司',
-            'exporter_name_short': '平尼克国际',
-            'exporter_name_en': 'Pinic International Trading',
-            'exporter_address': '菲律宾马尼拉宾农多马德里街513号',
-            'exporter_contact': '阿卜杜勒贾里勒',
-            'exporter_tel': '82-266-2402192',
-            'importer_name': '罗伯茨世界贸易有限公司',
-            'importer_name_en': 'Roberts World Traders Inc.',
-            'importer_address': '加拿大不列颠哥伦比亚维多利亚白桦新月街4号',
-            'importer_contact': '艾伦·博尔赫斯',
-            'importer_tel': '82-775-6178091'
-        }
-        
-        st.session_state.data_updated = True
-        st.session_state.last_update_time = datetime.now()
         progress_bar.empty()
         status_text.empty()
-        st.success("✅ PAD数据抓取完成！所有数据已更新")
+        st.success("✅ 数据抓取完成！")
         st.balloons()
 
-# 显示最后更新时间
-if st.session_state.last_update_time:
-    st.markdown(f"""
-    <div class="status-box">
-        📅 最后数据更新时间: {st.session_state.last_update_time.strftime('%Y-%m-%d %H:%M:%S')}
-    </div>
-    """, unsafe_allow_html=True)
+# ==================== 客户信息 ====================
+st.markdown("### 第一步：客户信息")
+col_c1, col_c2 = st.columns(2)
 
-# ==================== 第一步：客户信息 ====================
-st.markdown("""
-<div class="step-container">
-    <div class="step-header">
-        <span class="step-badge">第一步</span>
-        <span class="step-title">客户信息</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+with col_c1:
+    st.text_input("公司全称", value=st.session_state.customer_data.get('exporter_name', '平尼克国际贸易公司'), key="exporter_name")
+    st.text_input("公司英文名", value=st.session_state.customer_data.get('exporter_name_en', 'Pinic International Trading'), key="exporter_name_en")
 
-col_cust1, col_cust2 = st.columns(2)
+with col_c2:
+    st.text_input("进口商名称", value=st.session_state.customer_data.get('importer_name', '罗伯茨世界贸易有限公司'), key="importer_name")
+    st.text_input("进口商英文名", value=st.session_state.customer_data.get('importer_name_en', 'Roberts World Traders Inc.'), key="importer_name_en")
 
-with col_cust1:
-    st.markdown("##### 出口商信息")
-    exporter_name = st.text_input("公司全称", 
-        value=st.session_state.customer_data.get('exporter_name', '平尼克国际贸易公司'))
-    exporter_name_short = st.text_input("公司简称", 
-        value=st.session_state.customer_data.get('exporter_name_short', '平尼克国际'))
-    exporter_name_en = st.text_input("公司英文名", 
-        value=st.session_state.customer_data.get('exporter_name_en', 'Pinic International Trading'))
-    exporter_address = st.text_input("公司地址", 
-        value=st.session_state.customer_data.get('exporter_address', '菲律宾马尼拉宾农多马德里街513号'))
-    exporter_contact = st.text_input("企业法人", 
-        value=st.session_state.customer_data.get('exporter_contact', '阿卜杜勒贾里勒'))
-    exporter_tel = st.text_input("电话/传真", 
-        value=st.session_state.customer_data.get('exporter_tel', '82-266-2402192'))
+# ==================== 产品信息 ====================
+st.markdown("### 第二步：产品信息")
+col_p1, col_p2 = st.columns(2)
 
-with col_cust2:
-    st.markdown("##### 进口商信息")
-    importer_name = st.text_input("进口商名称", 
-        value=st.session_state.customer_data.get('importer_name', '罗伯茨世界贸易有限公司'))
-    importer_name_en = st.text_input("进口商英文名", 
-        value=st.session_state.customer_data.get('importer_name_en', 'Roberts World Traders Inc.'))
-    importer_address = st.text_input("进口商地址", 
-        value=st.session_state.customer_data.get('importer_address', '加拿大不列颠哥伦比亚维多利亚白桦新月街4号'))
-    importer_contact = st.text_input("进口商联系人", 
-        value=st.session_state.customer_data.get('importer_contact', '艾伦·博尔赫斯'))
-    importer_tel = st.text_input("进口商电话", 
-        value=st.session_state.customer_data.get('importer_tel', '82-775-6178091'))
+with col_p1:
+    product_code = st.text_input("商品编号", value=st.session_state.product_data.get('product_code', 'P010'), key="product_code")
+    product_name = st.text_input("商品名称", value=st.session_state.product_data.get('product_name', '自动售货机'), key="product_name")
 
-# ==================== 第二步：产品信息 ====================
-st.markdown("""
-<div class="step-container">
-    <div class="step-header">
-        <span class="step-badge">第二步</span>
-        <span class="step-title">产品信息</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+with col_p2:
+    gross_weight = st.text_input("毛重", value=st.session_state.product_data.get('gross_weight', '280.00KGS/托盘'), key="gross_weight")
+    volume = st.text_input("体积", value=st.session_state.product_data.get('volume', '2.55CBM/托盘'), key="volume")
+    unit_conversion = st.text_input("单位换算", value=st.session_state.product_data.get('unit_conversion', '1 SET/PALLET'), key="unit_conversion")
 
-col_prod1, col_prod2 = st.columns(2)
+# ==================== HS信息 ====================
+st.markdown("### 第三步：HS信息")
+col_h1, col_h2 = st.columns(2)
 
-with col_prod1:
-    product_code = st.text_input("商品编号", 
-        value=st.session_state.product_data.get('product_code', 'P010'))
-    product_name = st.text_input("商品名称", 
-        value=st.session_state.product_data.get('product_name', '自动售货机'))
-    product_name_en = st.text_input("英文名称", 
-        value=st.session_state.product_data.get('product_name_en', 'Vending machine'))
-    product_type = st.text_input("货物类型", 
-        value=st.session_state.product_data.get('product_type', '机器、机械器具、电气设备及其零件'))
+with col_h1:
+    hs_code = st.text_input("HS编码", value=st.session_state.hs_data.get('hs_code', '8476810000'), key="hs_code")
+with col_h2:
+    vat_rate = st.number_input("增值税率(%)", value=float(st.session_state.hs_data.get('vat_rate', 13)), key="vat_rate")
+    export_rebate_rate = st.number_input("出口退税率(%)", value=float(st.session_state.hs_data.get('export_rebate_rate', 13)), key="export_rebate_rate")
 
-with col_prod2:
-    sales_unit = st.text_input("销售单位", 
-        value=st.session_state.product_data.get('sales_unit', '台(SET)'))
-    package_unit = st.text_input("包装单位", 
-        value=st.session_state.product_data.get('package_unit', '托盘(PALLET)'))
-    unit_conversion = st.text_input("单位换算", 
-        value=st.session_state.product_data.get('unit_conversion', '1 SET/PALLET'))
-    gross_weight = st.text_input("毛重", 
-        value=st.session_state.product_data.get('gross_weight', '280.00KGS/托盘'))
-    net_weight = st.text_input("净重", 
-        value=st.session_state.product_data.get('net_weight', '220.00KGS/托盘'))
-    volume = st.text_input("体积", 
-        value=st.session_state.product_data.get('volume', '2.55CBM/托盘'))
+# ==================== 物流信息 ====================
+st.markdown("### 第四步：物流信息")
+col_l1, col_l2 = st.columns(2)
 
-# ==================== 第三步：HS信息 ====================
-st.markdown("""
-<div class="step-container">
-    <div class="step-header">
-        <span class="step-badge">第三步</span>
-        <span class="step-title">HS信息</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+with col_l1:
+    st.markdown("**普柜单价**")
+    container_20_normal = st.number_input("20'GP", value=1452, key="container_20_normal")
+    container_40_normal = st.number_input("40'GP", value=2613, key="container_40_normal")
 
-col_hs1, col_hs2 = st.columns(2)
+with col_l2:
+    st.markdown("**冻柜单价**")
+    container_20_frozen = st.number_input("20'RF", value=2903, key="container_20_frozen")
+    container_40_frozen = st.number_input("40'RF", value=5225, key="container_40_frozen")
 
-with col_hs1:
-    hs_code = st.text_input("HS编码", 
-        value=st.session_state.hs_data.get('hs_code', '8476810000'))
-    customs_condition = st.text_input("海关监管条件", 
-        value=st.session_state.hs_data.get('customs_condition', '无'))
-    inspection_type = st.text_input("检验检疫类别", 
-        value=st.session_state.hs_data.get('inspection_type', '无'))
+# ==================== 交易信息 ====================
+st.markdown("### 第五步：交易信息")
+col_t1, col_t2, col_t3 = st.columns(3)
 
-with col_hs2:
-    legal_unit = st.text_input("法定单位", 
-        value=st.session_state.hs_data.get('legal_unit', '台(SET)'))
-    pref_tax_rate = st.number_input("优惠税率(%)", 
-        value=float(st.session_state.hs_data.get('pref_tax_rate', 50)))
-    vat_rate = st.number_input("增值税率(%)", 
-        value=float(st.session_state.hs_data.get('vat_rate', 13)))
-    export_rebate_rate = st.number_input("出口退税率(%)", 
-        value=float(st.session_state.hs_data.get('export_rebate_rate', 13)))
+with col_t1:
+    quantity = st.number_input("交易数量", value=182, step=1, key="quantity")
+    purchase_price = st.number_input("采购单价", value=4778.0, step=100.0, key="purchase_price")
 
-# ==================== 第四步：物流信息 ====================
-st.markdown("""
-<div class="step-container">
-    <div class="step-header">
-        <span class="step-badge">第四步</span>
-        <span class="step-title">物流信息</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+with col_t2:
+    exchange_rate = st.number_input("USD/CAD 汇率", value=1.368, step=0.001, key="exchange_rate")
+    trade_term = st.selectbox("贸易术语", ["FOB", "CIF", "EXW"], key="trade_term")
 
-col_log1, col_log2 = st.columns(2)
+with col_t3:
+    expected_profit_rate = st.slider("预期利润率(%)", 0, 50, 15, key="expected_profit_rate")
+    transport_note = st.selectbox("运输要求", ["普通", "冷藏"], key="transport_note")
 
-with col_log1:
-    st.markdown("**普柜单价 (USD)**")
-    col_p1, col_p2 = st.columns(2)
-    with col_p1:
-        lcl_w_normal = st.number_input("LCL(W)", 
-            value=st.session_state.freight_data.get('lcl_w_normal', 73))
-        container_20_normal = st.number_input("20'GP", 
-            value=st.session_state.freight_data.get('container_20_normal', 1452))
-        container_40_normal = st.number_input("40'GP", 
-            value=st.session_state.freight_data.get('container_40_normal', 2613))
-    with col_p2:
-        lcl_m_normal = st.number_input("LCL(M)", 
-            value=st.session_state.freight_data.get('lcl_m_normal', 88))
-        container_40hc_normal = st.number_input("40'HC", 
-            value=st.session_state.freight_data.get('container_40hc_normal', 3135))
-
-with col_log2:
-    st.markdown("**冻柜单价 (USD)**")
-    col_f1, col_f2 = st.columns(2)
-    with col_f1:
-        lcl_w_frozen = st.number_input("LCL(W)冻", 
-            value=st.session_state.freight_data.get('lcl_w_frozen', 146))
-        container_20_frozen = st.number_input("20'RF", 
-            value=st.session_state.freight_data.get('container_20_frozen', 2903))
-        container_40_frozen = st.number_input("40'RF", 
-            value=st.session_state.freight_data.get('container_40_frozen', 5225))
-    with col_f2:
-        lcl_m_frozen = st.number_input("LCL(M)冻", 
-            value=st.session_state.freight_data.get('lcl_m_frozen', 189))
-        container_40rh_frozen = st.number_input("40'RH", 
-            value=st.session_state.freight_data.get('container_40rh_frozen', 6270))
-
-# ==================== 第五步：交易信息 ====================
-st.markdown("""
-<div class="step-container">
-    <div class="step-header">
-        <span class="step-badge">第五步</span>
-        <span class="step-title">交易信息</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-col_trade1, col_trade2, col_trade3 = st.columns(3)
-
-with col_trade1:
-    quantity = st.number_input("交易数量", value=182, step=1)
-    purchase_price = st.number_input("采购单价", value=4778.0, step=100.0)
-
-with col_trade2:
-    account_balance = st.number_input("账户本币余额", value=1888000.0, step=1000.0)
-    exchange_rate = st.number_input("USD/CAD 汇率", value=1.368, step=0.001, format="%.3f")
-    trade_term = st.selectbox("贸易术语", ["EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CIP", "DAP", "DPU", "DDP"])
-
-with col_trade3:
-    payment = st.selectbox("支付方式", ["T/T", "L/C", "D/P", "T/T+LC"])
-    expected_profit_rate = st.slider("预期利润率(%)", 0, 50, 15)
-    transport_note = st.selectbox("运输要求", ["普通", "冷藏", "冷冻"])
-
-# ==================== 提取数值用于计算 ====================
+# ==================== 提取数值 ====================
 def extract_number(text):
     try:
         numbers = re.findall(r"[-+]?\d*\.\d+|\d+", str(text))
@@ -428,132 +139,35 @@ def extract_number(text):
     except:
         return 0
 
-# 计算货物总量
+# 计算
 single_gross = extract_number(gross_weight)
-single_net = extract_number(net_weight)
 single_volume = extract_number(volume)
 units_per_package = extract_number(unit_conversion)
-
-if units_per_package > 0:
-    total_packages = np.ceil(quantity / units_per_package)
-else:
-    total_packages = quantity
-
-total_gross = total_packages * single_gross
-total_net = total_packages * single_net
+total_packages = np.ceil(quantity / units_per_package) if units_per_package > 0 else quantity
 total_volume = total_packages * single_volume
 
-# ==================== 第六步：计算报价 ====================
-st.markdown("""
-<div class="step-container">
-    <div class="step-header">
-        <span class="step-badge">第六步</span>
-        <span class="step-title">计算报价</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# ==================== 计算报价 ====================
+st.markdown("### 第六步：计算报价")
 
-col_calc1, col_calc2 = st.columns(2)
+col_b1, col_b2 = st.columns(2)
+with col_b1:
+    if st.button("计算最优集装箱", use_container_width=True):
+        # 简单计算
+        containers_needed = np.ceil(total_volume / 33)
+        st.session_state.best_freight = containers_needed * container_20_normal
+        st.success(f"需要 {containers_needed:.0f} 个集装箱")
 
-with col_calc1:
-    if st.button("🚢 计算最优集装箱", use_container_width=True):
-        # 创建集装箱数据
-        container_types = {
-            "20'普柜": {"体积": 33, "重量": 25000, "单价": container_20_normal},
-            "40'普柜": {"体积": 67, "重量": 29000, "单价": container_40_normal},
-            "40'高柜": {"体积": 76, "重量": 29000, "单价": container_40hc_normal},
-            "20'冻柜": {"体积": 27, "重量": 27400, "单价": container_20_frozen},
-            "40'冻柜": {"体积": 58, "重量": 27700, "单价": container_40_frozen},
-            "40'冻高": {"体积": 66, "重量": 29000, "单价": container_40rh_frozen}
-        }
-        
-        container_options = []
-        for name, data in container_types.items():
-            if "冻" in name and transport_note != "冷冻":
-                continue
-            
-            qty_by_vol = data["体积"] / single_volume if single_volume > 0 else 0
-            qty_by_weight = data["重量"] / single_gross if single_gross > 0 else 0
-            max_qty = min(qty_by_vol, qty_by_weight)
-            
-            if max_qty > 0:
-                containers_needed = np.ceil(quantity / max_qty)
-                total_freight = containers_needed * data["单价"]
-                unit_freight = total_freight / quantity
-                
-                container_options.append({
-                    "类型": name,
-                    "可装数量": f"{max_qty:.0f}台",
-                    "需要箱数": f"{containers_needed:.0f}个",
-                    "总运费": f"${total_freight:,.2f}",
-                    "单位运费": f"${unit_freight:.2f}/台"
-                })
-        
-        st.session_state.container_options = container_options
-        
-        if container_options:
-            # 找出单位运费最低的方案
-            best_option = min(container_options, key=lambda x: float(x["单位运费"].replace("$/台", "").replace("$", "").replace(",", "")))
-            st.session_state.best_freight = float(best_option["总运费"].replace("$", "").replace(",", ""))
-            st.session_state.best_container = best_option
-            st.session_state.calculated = True
-
-with col_calc2:
-    if st.button("💰 计算建议报价", use_container_width=True):
-        # 计算各项费用
+with col_b2:
+    if st.button("计算建议报价", use_container_width=True):
         purchase_total = purchase_price * quantity
         rebate = purchase_total / (1 + vat_rate/100) * (export_rebate_rate/100)
-        
-        inland_fee = max(50, total_volume * 10) * exchange_rate
-        forwarder_fee = max(70, total_volume * 2.5) * exchange_rate
-        inspection_fee = 30 * exchange_rate if "B" in str(inspection_type) else 0
-        certificate_fee = 100 * exchange_rate if "B" in str(inspection_type) else 0
-        customs_fee = 30 * exchange_rate if trade_term != "EXW" else 0
-        insurance = purchase_total * 1.1 * 0.005 if trade_term in ["CIF", "CIP", "DAP", "DPU", "DDP"] else 0
-        
-        if payment in ["D/P", "D/A"]:
-            bank_fee = max(15, min(285, purchase_total * 0.001)) + 45
-        elif "L/C" in payment:
-            bank_fee = max(15, purchase_total * 0.00125) + 75
-        else:
-            bank_fee = 0
-        
-        domestic_total = inland_fee + forwarder_fee + inspection_fee + certificate_fee + customs_fee + insurance
-        total_cost_before_freight = purchase_total - rebate + domestic_total + (bank_fee * exchange_rate)
-        total_cost = total_cost_before_freight + (st.session_state.best_freight * exchange_rate)
-        
+        total_cost = purchase_total - rebate + (st.session_state.best_freight * exchange_rate)
         st.session_state.suggested_price = (total_cost * (1 + expected_profit_rate/100)) / quantity / exchange_rate
-        st.session_state.total_cost = total_cost
 
-# 显示计算结果
-if st.session_state.calculated:
-    col_res1, col_res2, col_res3 = st.columns(3)
-    
-    with col_res1:
-        st.markdown("##### 最优集装箱方案")
-        if st.session_state.best_container:
-            st.info(f"**{st.session_state.best_container['类型']}**\n\n"
-                   f"需要 {st.session_state.best_container['需要箱数']}\n\n"
-                   f"总运费 {st.session_state.best_container['总运费']}")
-    
-    with col_res2:
-        st.markdown("##### 建议报价")
-        st.markdown(f"<div class='result-box' style='padding:10px;'>${st.session_state.suggested_price:.2f}/台</div>", unsafe_allow_html=True)
-    
-    with col_res3:
-        st.markdown("##### 总成本")
-        st.markdown(f"<div class='result-box' style='padding:10px;'>¥{st.session_state.total_cost:,.2f}</div>", unsafe_allow_html=True)
+if st.session_state.suggested_price > 0:
+    st.metric("建议报价", f"${st.session_state.suggested_price:.2f}/台")
 
-# ==================== 底部信息 ====================
-st.markdown("---")
-st.markdown(f"""
-<div style='text-align: center; color: #666; padding: 10px; background-color: #f8f9fa; border-radius: 5px;'>
-    <div>运行模式: Streamlit Cloud | PAD模拟抓取已就绪</div>
-    <div>更新时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
-</div>
-""", unsafe_allow_html=True)
-
-# 保存按钮
-if st.button("💾 保存当前数据", use_container_width=True):
-    st.success("✅ 数据已保存到会话中！")
+# ==================== 保存按钮 ====================
+if st.button("💾 保存数据", use_container_width=True):
+    st.success("✅ 数据已保存！")
     st.balloons()
