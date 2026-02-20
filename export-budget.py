@@ -1,9 +1,16 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import re
 import time
+
+# 设置北京时区
+beijing_tz = timezone(timedelta(hours=8))
+
+def get_beijing_time():
+    """获取当前北京时间"""
+    return datetime.now(beijing_tz).strftime('%Y-%m-%d %H:%M:%S')
 
 # 页面配置
 st.set_page_config(
@@ -229,7 +236,7 @@ with st.sidebar:
             with st.spinner("正在从Excel抓取数据..."):
                 time.sleep(1.5)
                 st.session_state.data_updated = True
-                st.session_state.last_update_time = datetime.now()
+                st.session_state.last_update_time = get_beijing_time()
                 st.session_state.product_data = {
                     'product_code': 'P010',
                     'product_name': '自动售货机',
@@ -259,7 +266,7 @@ with st.sidebar:
             st.rerun()
     
     if st.session_state.get('last_update_time'):
-        st.caption(f"最后更新: {st.session_state.last_update_time.strftime('%H:%M:%S')}")
+        st.caption(f"最后更新: {st.session_state.last_update_time}")
     
     st.markdown("---")
     
@@ -267,48 +274,52 @@ with st.sidebar:
     st.markdown("## 🚢 港口信息")
     col_port1, col_port2 = st.columns(2)
     with col_port1:
-        st.text_input("出口国", "China", key="export_country")
-        st.text_input("装运港", "Shanghai", key="loading_port")
+        export_country = st.text_input("出口国", "China", key="export_country")
+        loading_port = st.text_input("装运港", "Shanghai", key="loading_port")
     with col_port2:
-        st.text_input("进口国", "Canada", key="import_country")
-        st.text_input("目的港", "Vancouver", key="destination_port")
+        import_country = st.text_input("进口国", "Canada", key="import_country")
+        destination_port = st.text_input("目的港", "Vancouver", key="destination_port")
     
     st.markdown("---")
     
     # ==================== 物流信息表格 ====================
     st.markdown("## 📦 物流信息")
     
-    # 创建物流信息表格
-    freight_data = st.session_state.freight_data if st.session_state.freight_data else {
-        'lcl_w_normal': 73, 'lcl_m_normal': 88,
-        'c20_normal': 1452, 'c40_normal': 2613, 'c40hc_normal': 3135,
-        'lcl_w_frozen': 146, 'lcl_m_frozen': 189,
-        'c20_frozen': 2903, 'c40_frozen': 5225, 'c40rh_frozen': 6270
-    }
+    # 安全获取物流数据
+    if st.session_state.freight_data:
+        freight_data = st.session_state.freight_data
+    else:
+        # 默认数据
+        freight_data = {
+            'lcl_w_normal': 73, 'lcl_m_normal': 88,
+            'c20_normal': 1452, 'c40_normal': 2613, 'c40hc_normal': 3135,
+            'lcl_w_frozen': 146, 'lcl_m_frozen': 189,
+            'c20_frozen': 2903, 'c40_frozen': 5225, 'c40rh_frozen': 6270
+        }
     
     # 普柜表格
     st.markdown("**普柜单价 (USD)**")
     col_p1, col_p2, col_p3 = st.columns(3)
     with col_p1:
-        lcl_w_normal = st.number_input("LCL(W)", value=freight_data['lcl_w_normal'], key="lcl_w_normal", step=1)
-        container_20_normal = st.number_input("20'GP", value=freight_data['c20_normal'], key="c20_normal", step=1)
+        lcl_w_normal = st.number_input("LCL(W)", value=freight_data.get('lcl_w_normal', 73), key="lcl_w_normal", step=1)
+        container_20_normal = st.number_input("20'GP", value=freight_data.get('c20_normal', 1452), key="c20_normal", step=1)
     with col_p2:
-        lcl_m_normal = st.number_input("LCL(M)", value=freight_data['lcl_m_normal'], key="lcl_m_normal", step=1)
-        container_40_normal = st.number_input("40'GP", value=freight_data['c40_normal'], key="c40_normal", step=1)
+        lcl_m_normal = st.number_input("LCL(M)", value=freight_data.get('lcl_m_normal', 88), key="lcl_m_normal", step=1)
+        container_40_normal = st.number_input("40'GP", value=freight_data.get('c40_normal', 2613), key="c40_normal", step=1)
     with col_p3:
-        container_40hc_normal = st.number_input("40'HC", value=freight_data['c40hc_normal'], key="c40hc_normal", step=1)
+        container_40hc_normal = st.number_input("40'HC", value=freight_data.get('c40hc_normal', 3135), key="c40hc_normal", step=1)
     
     # 冻柜表格
     st.markdown("**冻柜单价 (USD)**")
     col_f1, col_f2, col_f3 = st.columns(3)
     with col_f1:
-        lcl_w_frozen = st.number_input("LCL(W)冻", value=freight_data['lcl_w_frozen'], key="lcl_w_frozen", step=1)
-        container_20_frozen = st.number_input("20'RF", value=freight_data['c20_frozen'], key="c20_frozen", step=1)
+        lcl_w_frozen = st.number_input("LCL(W)冻", value=freight_data.get('lcl_w_frozen', 146), key="lcl_w_frozen", step=1)
+        container_20_frozen = st.number_input("20'RF", value=freight_data.get('c20_frozen', 2903), key="c20_frozen", step=1)
     with col_f2:
-        lcl_m_frozen = st.number_input("LCL(M)冻", value=freight_data['lcl_m_frozen'], key="lcl_m_frozen", step=1)
-        container_40_frozen = st.number_input("40'RF", value=freight_data['c40_frozen'], key="c40_frozen", step=1)
+        lcl_m_frozen = st.number_input("LCL(M)冻", value=freight_data.get('lcl_m_frozen', 189), key="lcl_m_frozen", step=1)
+        container_40_frozen = st.number_input("40'RF", value=freight_data.get('c40_frozen', 5225), key="c40_frozen", step=1)
     with col_f3:
-        container_40rh_frozen = st.number_input("40'RH", value=freight_data['c40rh_frozen'], key="c40rh_frozen", step=1)
+        container_40rh_frozen = st.number_input("40'RH", value=freight_data.get('c40rh_frozen', 6270), key="c40rh_frozen", step=1)
 
 # ==================== 公司信息（紧凑的标题栏）====================
 st.markdown("""
@@ -339,12 +350,19 @@ st.markdown("""
 # ==================== HS信息（紧凑的一行）====================
 st.markdown('<div class="hs-row">', unsafe_allow_html=True)
 
-hs_code = st.text_input("HS编码", "8476810000", key="hs_code", label_visibility="collapsed", placeholder="HS编码")
-customs_condition = st.text_input("监管条件", "无", key="customs_condition", label_visibility="collapsed", placeholder="监管条件")
-inspection_type = st.text_input("检验检疫", "无", key="inspection_type", label_visibility="collapsed", placeholder="检验检疫")
-legal_unit = st.text_input("法定单位", "台(SET)", key="legal_unit", label_visibility="collapsed", placeholder="法定单位")
-vat_rate = st.number_input("增值税%", value=13, key="vat_rate", label_visibility="collapsed", placeholder="增值税%", step=1)
-export_rebate_rate = st.number_input("退税率%", value=13, key="export_rebate_rate", label_visibility="collapsed", placeholder="退税率%", step=1)
+col_hs1, col_hs2, col_hs3, col_hs4, col_hs5, col_hs6 = st.columns(6)
+with col_hs1:
+    hs_code = st.text_input("HS编码", "8476810000", key="hs_code", label_visibility="collapsed", placeholder="HS编码")
+with col_hs2:
+    customs_condition = st.text_input("监管条件", "无", key="customs_condition", label_visibility="collapsed", placeholder="监管条件")
+with col_hs3:
+    inspection_type = st.text_input("检验检疫", "无", key="inspection_type", label_visibility="collapsed", placeholder="检验检疫")
+with col_hs4:
+    legal_unit = st.text_input("法定单位", "台(SET)", key="legal_unit", label_visibility="collapsed", placeholder="法定单位")
+with col_hs5:
+    vat_rate = st.number_input("增值税%", value=13, key="vat_rate", label_visibility="collapsed", placeholder="增值税%", step=1)
+with col_hs6:
+    export_rebate_rate = st.number_input("退税率%", value=13, key="export_rebate_rate", label_visibility="collapsed", placeholder="退税率%", step=1)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -362,18 +380,18 @@ if st.session_state.data_updated and st.session_state.product_data:
     col_prod1, col_prod2 = st.columns(2)
 
     with col_prod1:
-        st.text_input("商品编号", value=st.session_state.product_data['product_code'], key="product_code")
-        st.text_input("商品名称", value=st.session_state.product_data['product_name'], key="product_name")
-        st.text_input("英文名称", value=st.session_state.product_data['product_name_en'], key="product_name_en")
-        st.text_input("货物类型", value=st.session_state.product_data['product_type'], key="product_type")
+        product_code = st.text_input("商品编号", value=st.session_state.product_data.get('product_code', ''), key="product_code_display")
+        product_name = st.text_input("商品名称", value=st.session_state.product_data.get('product_name', ''), key="product_name_display")
+        product_name_en = st.text_input("英文名称", value=st.session_state.product_data.get('product_name_en', ''), key="product_name_en_display")
+        product_type = st.text_input("货物类型", value=st.session_state.product_data.get('product_type', ''), key="product_type_display")
 
     with col_prod2:
-        st.text_input("销售单位", value=st.session_state.product_data['sales_unit'], key="sales_unit")
-        st.text_input("包装单位", value=st.session_state.product_data['package_unit'], key="package_unit")
-        st.text_input("单位换算", value=st.session_state.product_data['unit_conversion'], key="unit_conversion")
-        gross_weight = st.text_input("毛重", value=st.session_state.product_data['gross_weight'], key="gross_weight")
-        net_weight = st.text_input("净重", value=st.session_state.product_data['net_weight'], key="net_weight")
-        volume = st.text_input("体积", value=st.session_state.product_data['volume'], key="volume")
+        sales_unit = st.text_input("销售单位", value=st.session_state.product_data.get('sales_unit', ''), key="sales_unit_display")
+        package_unit = st.text_input("包装单位", value=st.session_state.product_data.get('package_unit', ''), key="package_unit_display")
+        unit_conversion = st.text_input("单位换算", value=st.session_state.product_data.get('unit_conversion', ''), key="unit_conversion_display")
+        gross_weight = st.text_input("毛重", value=st.session_state.product_data.get('gross_weight', ''), key="gross_weight_display")
+        net_weight = st.text_input("净重", value=st.session_state.product_data.get('net_weight', ''), key="net_weight_display")
+        volume = st.text_input("体积", value=st.session_state.product_data.get('volume', ''), key="volume_display")
 else:
     st.markdown("""
     <div class="empty-state">
@@ -394,18 +412,24 @@ st.markdown("""
 col_trade1, col_trade2, col_trade3 = st.columns(3)
 
 with col_trade1:
-    quantity = st.number_input("交易数量", value=st.session_state.quantity if st.session_state.quantity > 0 else 182, step=1, key="quantity")
-    purchase_price = st.number_input("采购单价", value=st.session_state.purchase_price if st.session_state.purchase_price > 0 else 4778.0, step=100.0, key="purchase_price")
+    quantity = st.number_input("交易数量", value=st.session_state.quantity if st.session_state.quantity > 0 else 182, step=1, key="quantity_input")
+    purchase_price = st.number_input("采购单价", value=st.session_state.purchase_price if st.session_state.purchase_price > 0 else 4778.0, step=100.0, key="purchase_price_input")
 
 with col_trade2:
     account_balance = st.number_input("账户余额", value=1888000.0, step=1000.0, key="account_balance")
     exchange_rate = st.number_input("USD/CAD汇率", value=1.368, step=0.001, format="%.3f", key="exchange_rate")
 
 with col_trade3:
-    trade_term = st.selectbox("贸易术语", ["FOB", "CIF", "EXW", "CFR", "CIP"], key="trade_term")
-    payment = st.selectbox("支付方式", ["T/T", "L/C", "D/P", "T/T+LC"], key="payment")
+    trade_term = st.selectbox("贸易术语", ["FOB", "CIF", "EXW", "CFR", "CIP"], key="trade_term_select")
+    payment = st.selectbox("支付方式", ["T/T", "L/C", "D/P", "T/T+LC"], key="payment_select")
     expected_profit_rate = st.slider("预期利润率%", 0, 50, 15, key="expected_profit_rate")
     transport_note = st.selectbox("运输要求", ["普通", "冷藏"], key="transport_note")
+
+# 更新session state中的交易信息
+st.session_state.quantity = quantity
+st.session_state.purchase_price = purchase_price
+st.session_state.trade_term = trade_term
+st.session_state.payment = payment
 
 # ==================== 提取数值用于计算 ====================
 def extract_number(text):
@@ -420,7 +444,7 @@ if st.session_state.data_updated and st.session_state.product_data:
     single_gross = extract_number(gross_weight)
     single_net = extract_number(net_weight)
     single_volume = extract_number(volume)
-    units_per_package = extract_number(st.session_state.product_data['unit_conversion'])
+    units_per_package = extract_number(unit_conversion)
 
     if units_per_package > 0:
         total_packages = np.ceil(quantity / units_per_package)
@@ -492,7 +516,7 @@ if st.session_state.data_updated and st.session_state.product_data:
             customs_fee = 30 * exchange_rate if trade_term != "EXW" else 0
             total_cost = purchase_total - rebate + inland_fee + forwarder_fee + customs_fee + (st.session_state.best_freight * exchange_rate)
             
-            test_price = st.number_input("测试报价", value=float(st.session_state.suggested_price), step=5.0, format="%.2f")
+            test_price = st.number_input("测试报价", value=float(st.session_state.suggested_price), step=5.0, format="%.2f", key="test_price_input")
             
             if test_price > 0:
                 revenue = test_price * quantity * exchange_rate
@@ -650,6 +674,6 @@ else:
 st.markdown("---")
 st.markdown(f"""
 <div style='text-align: center; color: #666; padding: 8px; background-color: #f8f9fa; border-radius: 5px; font-size:0.9rem;'>
-    装运港: Shanghai, China | 目的港: Vancouver, Canada | 更新时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    装运港: {loading_port}, {export_country} | 目的港: {destination_port}, {import_country} | 北京时间: {get_beijing_time()}
 </div>
 """, unsafe_allow_html=True)
