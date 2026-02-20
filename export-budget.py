@@ -31,35 +31,52 @@ st.markdown("""
         border-radius: 10px;
         margin-bottom: 15px;
     }
-    .company-header {
-        background-color: #f0f8ff;
-        padding: 15px 20px;
+    .company-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 2px solid #2a5298;
+    }
+    .company-container {
+        display: flex;
+        gap: 20px;
+    }
+    .company-left, .company-right {
+        flex: 1;
+        padding: 15px;
+        background-color: white;
         border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .company-left {
+        border-right: 2px solid #dee2e6;
+    }
+    .company-right {
+        border-left: 2px solid #dee2e6;
+    }
+    .company-title {
+        font-size: 1.2rem;
+        color: #2a5298;
+        font-weight: bold;
         margin-bottom: 15px;
-        border: 1px solid #b8daff;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #2a5298;
     }
     .company-row {
         display: flex;
-        flex-wrap: wrap;
-        gap: 30px;
-        margin-bottom: 10px;
-    }
-    .company-row:last-child {
-        margin-bottom: 0;
-    }
-    .company-item {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
+        margin-bottom: 8px;
+        padding: 4px 0;
     }
     .company-label {
         font-weight: bold;
         color: #1e3c72;
-        margin-right: 8px;
-        min-width: 70px;
+        width: 100px;
+        min-width: 100px;
     }
     .company-value {
         color: #2a5298;
+        flex: 1;
     }
     .step-container {
         background-color: #f8f9fa;
@@ -211,9 +228,9 @@ if 'data_updated' not in st.session_state:
 if 'last_update_time' not in st.session_state:
     st.session_state.last_update_time = None
 if 'best_freight' not in st.session_state:
-    st.session_state.best_freight = 0
+    st.session_state.best_freight = 0.0
 if 'suggested_price' not in st.session_state:
-    st.session_state.suggested_price = 0
+    st.session_state.suggested_price = 0.0
 if 'calculated' not in st.session_state:
     st.session_state.calculated = False
 if 'customer_data' not in st.session_state:
@@ -252,7 +269,7 @@ if 'freight_data' not in st.session_state:
 if 'exchange_rate' not in st.session_state:
     st.session_state.exchange_rate = 1.368
 if 'quantity' not in st.session_state:
-    st.session_state.quantity = 0
+    st.session_state.quantity = 0.0
 if 'purchase_price' not in st.session_state:
     st.session_state.purchase_price = 0.0
 if 'trade_term' not in st.session_state:
@@ -264,13 +281,13 @@ if 'payment' not in st.session_state:
 def clear_all_data():
     st.session_state.data_updated = False
     st.session_state.last_update_time = None
-    st.session_state.best_freight = 0
-    st.session_state.suggested_price = 0
+    st.session_state.best_freight = 0.0
+    st.session_state.suggested_price = 0.0
     st.session_state.calculated = False
     st.session_state.product_data = None
     st.session_state.freight_data = None
     st.session_state.exchange_rate = 1.368
-    st.session_state.quantity = 0
+    st.session_state.quantity = 0.0
     st.session_state.purchase_price = 0.0
     st.session_state.trade_term = "FOB"
     st.session_state.payment = "T/T"
@@ -352,7 +369,7 @@ with st.sidebar:
         import_country = st.text_input("进口国", "Canada", key="import_country")
         destination_port = st.text_input("目的港", "Vancouver", key="destination_port")
 
-# ==================== 公司信息（完整显示，使用安全获取）====================
+# ==================== 公司信息（左右并列，明显分割）====================
 st.markdown("""
 <div class="step-container">
     <div class="step-header">
@@ -362,106 +379,125 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="company-header">', unsafe_allow_html=True)
+st.markdown('<div class="company-section">', unsafe_allow_html=True)
+st.markdown('<div class="company-container">', unsafe_allow_html=True)
 
-# 安全获取字典值的函数
-def get_customer_value(key, default=''):
-    return st.session_state.customer_data.get(key, default)
+# 左侧：出口商信息
+st.markdown('<div class="company-left">', unsafe_allow_html=True)
+st.markdown('<div class="company-title">🏭 出口商信息</div>', unsafe_allow_html=True)
 
-# 第一行：公司名称
+# 出口商信息行
 st.markdown(f"""
 <div class="company-row">
-    <div class="company-item">
-        <span class="company-label">出口商:</span>
-        <span class="company-value">{get_customer_value('exporter_name')} ({get_customer_value('exporter_name_en')})</span>
-    </div>
-    <div class="company-item">
-        <span class="company-label">公司简称:</span>
-        <span class="company-value">{get_customer_value('exporter_name_short')}</span>
-    </div>
-    <div class="company-item">
-        <span class="company-label">进口商:</span>
-        <span class="company-value">{get_customer_value('importer_name')} ({get_customer_value('importer_name_en')})</span>
-    </div>
+    <div class="company-label">公司全称：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_name"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">公司简称：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_name_short"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">英文名称：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_name_en"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">公司地址：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_address"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">地址英文：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_address_en"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">企业法人：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_contact"]} ({st.session_state.customer_data["exporter_contact_en"]})</div>
+</div>
+<div class="company-row">
+    <div class="company-label">电话/传真：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_tel"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">电子邮件：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_email"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">邮政编码：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_postal"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">组织机构代码：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_org_code"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">社会信用代码：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_social_code"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">海关代码：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_customs_code"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">报检登记号：</div>
+    <div class="company-value">{st.session_state.customer_data["exporter_inspection_code"]}</div>
 </div>
 """, unsafe_allow_html=True)
 
-# 第二行：地址
+st.markdown('</div>', unsafe_allow_html=True)
+
+# 右侧：进口商信息
+st.markdown('<div class="company-right">', unsafe_allow_html=True)
+st.markdown('<div class="company-title">🌍 进口商信息</div>', unsafe_allow_html=True)
+
+# 进口商信息行
 st.markdown(f"""
 <div class="company-row">
-    <div class="company-item">
-        <span class="company-label">出口地址:</span>
-        <span class="company-value">{get_customer_value('exporter_address')}</span>
-    </div>
-    <div class="company-item">
-        <span class="company-label">进口地址:</span>
-        <span class="company-value">{get_customer_value('importer_address')}</span>
-    </div>
+    <div class="company-label">公司名称：</div>
+    <div class="company-value">{st.session_state.customer_data["importer_name"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">英文名称：</div>
+    <div class="company-value">{st.session_state.customer_data["importer_name_en"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">公司地址：</div>
+    <div class="company-value">{st.session_state.customer_data["importer_address"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">地址英文：</div>
+    <div class="company-value">{st.session_state.customer_data["importer_address_en"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">联系人：</div>
+    <div class="company-value">{st.session_state.customer_data["importer_contact"]} ({st.session_state.customer_data["importer_contact_en"]})</div>
+</div>
+<div class="company-row">
+    <div class="company-label">电话：</div>
+    <div class="company-value">{st.session_state.customer_data["importer_tel"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">邮箱：</div>
+    <div class="company-value">{st.session_state.customer_data["importer_email"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">邮政编码：</div>
+    <div class="company-value">{st.session_state.customer_data["importer_postal"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">组织机构代码：</div>
+    <div class="company-value">{st.session_state.customer_data["importer_org_code"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">报检登记号：</div>
+    <div class="company-value">{st.session_state.customer_data["importer_inspection_code"]}</div>
+</div>
+<div class="company-row">
+    <div class="company-label">海关代码：</div>
+    <div class="company-value">{st.session_state.customer_data["importer_customs_code"]}</div>
 </div>
 """, unsafe_allow_html=True)
 
-# 第三行：联系人
-st.markdown(f"""
-<div class="company-row">
-    <div class="company-item">
-        <span class="company-label">出口联系人:</span>
-        <span class="company-value">{get_customer_value('exporter_contact')} ({get_customer_value('exporter_contact_en')}) | 电话: {get_customer_value('exporter_tel')} | 邮箱: {get_customer_value('exporter_email')}</span>
-    </div>
-</div>
-<div class="company-row">
-    <div class="company-item">
-        <span class="company-label">进口联系人:</span>
-        <span class="company-value">{get_customer_value('importer_contact')} ({get_customer_value('importer_contact_en')}) | 电话: {get_customer_value('importer_tel')} | 邮箱: {get_customer_value('importer_email')}</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# 第四行：代码信息
-st.markdown(f"""
-<div class="company-row">
-    <div class="company-item">
-        <span class="company-label">出口邮编:</span>
-        <span class="company-value">{get_customer_value('exporter_postal')}</span>
-    </div>
-    <div class="company-item">
-        <span class="company-label">出口组织代码:</span>
-        <span class="company-value">{get_customer_value('exporter_org_code')}</span>
-    </div>
-    <div class="company-item">
-        <span class="company-label">出口信用代码:</span>
-        <span class="company-value">{get_customer_value('exporter_social_code')}</span>
-    </div>
-</div>
-<div class="company-row">
-    <div class="company-item">
-        <span class="company-label">出口海关代码:</span>
-        <span class="company-value">{get_customer_value('exporter_customs_code')}</span>
-    </div>
-    <div class="company-item">
-        <span class="company-label">出口报检号:</span>
-        <span class="company-value">{get_customer_value('exporter_inspection_code')}</span>
-    </div>
-</div>
-<div class="company-row">
-    <div class="company-item">
-        <span class="company-label">进口邮编:</span>
-        <span class="company-value">{get_customer_value('importer_postal')}</span>
-    </div>
-    <div class="company-item">
-        <span class="company-label">进口组织代码:</span>
-        <span class="company-value">{get_customer_value('importer_org_code')}</span>
-    </div>
-    <div class="company-item">
-        <span class="company-label">进口报检号:</span>
-        <span class="company-value">{get_customer_value('importer_inspection_code')}</span>
-    </div>
-    <div class="company-item">
-        <span class="company-label">进口海关代码:</span>
-        <span class="company-value">{get_customer_value('importer_customs_code')}</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
+st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==================== HS信息（紧凑的一行）====================
@@ -586,7 +622,6 @@ st.markdown("""
 col_trade1, col_trade2, col_trade3 = st.columns(3)
 
 with col_trade1:
-    # 确保值为浮点数
     quantity_val = float(st.session_state.quantity) if st.session_state.quantity > 0 else 0.0
     purchase_price_val = float(st.session_state.purchase_price) if st.session_state.purchase_price > 0 else 0.0
     
@@ -595,7 +630,7 @@ with col_trade1:
 
 with col_trade2:
     account_balance = st.number_input("账户余额", value=1888000.0, step=1000.0, format="%.2f", key="account_balance")
-    exchange_rate = st.number_input("USD/CAD汇率", value=float(st.session_state.exchange_rate), step=0.001, format="%.3f", key="exchange_rate")
+    exchange_rate_input = st.number_input("USD/CAD汇率", value=float(st.session_state.exchange_rate), step=0.001, format="%.3f", key="exchange_rate_input")
 
 with col_trade3:
     trade_term = st.selectbox("贸易术语", ["EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CIP", "DAP", "DPU", "DDP"], 
@@ -605,12 +640,12 @@ with col_trade3:
     expected_profit_rate = st.slider("预期利润率%", 0, 50, 15, key="expected_profit_rate")
     transport_note = st.selectbox("运输要求", ["普通", "冷藏", "冷冻"], key="transport_note")
 
-# 更新session state中的交易信息（确保存储为浮点数）
+# 更新session state中的交易信息（确保所有变量都已定义）
 st.session_state.quantity = float(quantity)
 st.session_state.purchase_price = float(purchase_price)
 st.session_state.trade_term = trade_term
 st.session_state.payment = payment
-st.session_state.exchange_rate = float(exchange_rate)
+st.session_state.exchange_rate = float(exchange_rate_input)
 
 # ==================== 提取数值用于计算 ====================
 def extract_number(text):
@@ -674,8 +709,8 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
         if st.button("💰 计算报价", use_container_width=True):
             purchase_total = purchase_price * quantity
             rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
-            total_cost = purchase_total - rebate + (st.session_state.best_freight * exchange_rate)
-            st.session_state.suggested_price = (total_cost * (1.0 + expected_profit_rate/100.0)) / quantity / exchange_rate
+            total_cost = purchase_total - rebate + (st.session_state.best_freight * st.session_state.exchange_rate)
+            st.session_state.suggested_price = (total_cost * (1.0 + expected_profit_rate/100.0)) / quantity / st.session_state.exchange_rate
             st.session_state.total_cost = total_cost
 
     # 显示计算结果
@@ -692,15 +727,15 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
             # 计算总成本
             purchase_total = purchase_price * quantity
             rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
-            inland_fee = max(50.0, total_volume * 10.0) * exchange_rate
-            forwarder_fee = max(70.0, total_volume * 2.5) * exchange_rate
-            customs_fee = 30.0 * exchange_rate if trade_term != "EXW" else 0.0
-            total_cost = purchase_total - rebate + inland_fee + forwarder_fee + customs_fee + (st.session_state.best_freight * exchange_rate)
+            inland_fee = max(50.0, total_volume * 10.0) * st.session_state.exchange_rate
+            forwarder_fee = max(70.0, total_volume * 2.5) * st.session_state.exchange_rate
+            customs_fee = 30.0 * st.session_state.exchange_rate if trade_term != "EXW" else 0.0
+            total_cost = purchase_total - rebate + inland_fee + forwarder_fee + customs_fee + (st.session_state.best_freight * st.session_state.exchange_rate)
             
             test_price = st.number_input("测试报价", value=float(st.session_state.suggested_price), step=5.0, format="%.2f", key="test_price_input")
             
             if test_price > 0:
-                revenue = test_price * quantity * exchange_rate
+                revenue = test_price * quantity * st.session_state.exchange_rate
                 profit = revenue - total_cost
                 profit_margin = profit / purchase_total if purchase_total > 0 else 0.0
                 
@@ -723,11 +758,11 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
     # 计算费用
     purchase_total = purchase_price * quantity
     rebate = purchase_total / (1.0 + vat_rate/100.0) * (export_rebate_rate/100.0)
-    inland_fee = max(50.0, total_volume * 10.0) * exchange_rate
-    forwarder_fee = max(70.0, total_volume * 2.5) * exchange_rate
-    inspection_fee = 30.0 * exchange_rate if "B" in str(inspection_type) else 0.0
-    certificate_fee = 100.0 * exchange_rate if "B" in str(inspection_type) else 0.0
-    customs_fee = 30.0 * exchange_rate if trade_term != "EXW" else 0.0
+    inland_fee = max(50.0, total_volume * 10.0) * st.session_state.exchange_rate
+    forwarder_fee = max(70.0, total_volume * 2.5) * st.session_state.exchange_rate
+    inspection_fee = 30.0 * st.session_state.exchange_rate if "B" in str(inspection_type) else 0.0
+    certificate_fee = 100.0 * st.session_state.exchange_rate if "B" in str(inspection_type) else 0.0
+    customs_fee = 30.0 * st.session_state.exchange_rate if trade_term != "EXW" else 0.0
     insurance = purchase_total * 1.1 * 0.005 if trade_term in ["CIF", "CIP", "DAP", "DPU", "DDP"] else 0.0
 
     if payment in ["D/P", "D/A"]:
@@ -776,7 +811,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
         <div class="excel-label">3.国内费用</div>
         <div class="excel-sub">出口内陆运费</div>
         <div class="excel-amount">¥{inland_fee:,.2f}</div>
-        <div class="excel-principle">MAX(50, {total_volume:.1f}×10)×{exchange_rate:.3f}</div>
+        <div class="excel-principle">MAX(50, {total_volume:.1f}×10)×{st.session_state.exchange_rate:.3f}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -794,7 +829,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
         <div class="excel-label"></div>
         <div class="excel-sub">出口货代杂费</div>
         <div class="excel-amount">¥{forwarder_fee:,.2f}</div>
-        <div class="excel-principle">MAX(70, {total_volume:.1f}×2.5)×{exchange_rate:.3f}</div>
+        <div class="excel-principle">MAX(70, {total_volume:.1f}×2.5)×{st.session_state.exchange_rate:.3f}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -824,7 +859,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
             <div class="excel-label"></div>
             <div class="excel-sub">出口报关费</div>
             <div class="excel-amount">¥{customs_fee:,.2f}</div>
-            <div class="excel-principle">30×{exchange_rate:.3f}</div>
+            <div class="excel-principle">30×{st.session_state.exchange_rate:.3f}</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -861,7 +896,7 @@ if st.session_state.data_updated and st.session_state.product_data and quantity 
         """, unsafe_allow_html=True)
 
     # 总成本
-    total_cost_final = purchase_total - rebate + domestic_total + (bank_fee * exchange_rate) + (st.session_state.best_freight * exchange_rate)
+    total_cost_final = purchase_total - rebate + domestic_total + (bank_fee * st.session_state.exchange_rate) + (st.session_state.best_freight * st.session_state.exchange_rate)
 
     st.markdown(f"""
     <div class="excel-row" style="background-color: #2a5298; color: white; font-weight: bold;">
